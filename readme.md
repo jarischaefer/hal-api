@@ -91,23 +91,23 @@ The example above would yield the following result for a user with user id 123.
 	},
 	"_links": {
 		"self": {
-			"href": "http://hal-api.development/users/123,
+			"href": "http://hal-api.development/users/123",
 			"templated": true
 		},
 		"parent": {
-			"href": "http://hal-api.development/users,
+			"href": "http://hal-api.development/users",
 			"templated": false
 		},
 		"users.update": {
-			"href": "http://hal-api.development/users/123,
+			"href": "http://hal-api.development/users/123",
 			"templated": true
 		},
 		"users.destroy": {
-			"href": "http://hal-api.development/users/123,
+			"href": "http://hal-api.development/users/123",
 			"templated": true
 		},
 		"users.posts": {
-			"href": "http:/hal-api.development/users/123/posts,
+			"href": "http:/hal-api.development/users/123/posts",
 			"templated": true
 		}
 	},

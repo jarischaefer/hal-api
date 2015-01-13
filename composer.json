@@ -2,7 +2,7 @@
     "name": "jarischaefer/hal-api",
     "description": "Enhances your HATEOAS experience by automating common tasks.",
     "type": "library",
-    "keywords": ["HAL", "HATEOAS", "API"],
+    "keywords": ["HAL", "HATEOAS", "API", "REST"],
     "license": "MIT",
     "authors": [
         {

@@ -4,6 +4,15 @@
 
 The HAL-API is based on Laravel 5 (development). It is designed to automate common tasks in RESTful API programming.
 
+### Installation
+
+Include the following in your composer.json for the development version.
+
+```json
+"require": {
+	"jarischaefer/hal-api": "dev-master"
+}
+```
 
 ### Examples
 

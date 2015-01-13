@@ -14,6 +14,14 @@ Include the following in your composer.json for the development version.
 }
 ```
 
+Register the Service Provider in your config/app.php file.
+```php
+'providers' => [
+	'Jarischaefer\HalApi\HalApiServiceProvider',
+]
+```
+
+
 ### Examples
 
 #### Resource Controller

@@ -3,7 +3,6 @@
 use Config;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Input;
 use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
@@ -13,8 +12,10 @@ use Jarischaefer\HalApi\Routing\RouteHelper;
 use Jarischaefer\HalApi\Transformers\HalApiTransformer;
 use League\Fractal\Resource\Collection;
 use League\Fractal\Resource\Item;
-use Request;
+use Schema;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Class HalApiResourceController
@@ -97,6 +98,60 @@ class HalApiResourceController extends HalApiController
 	}
 
 	/**
+	 * Default callback for route model bindings (typically registered in the RouteServiceProvider).
+	 * A GET route to /users/{users} needs a binding so the model is automatically passed to the controller's
+	 * method. In this example, we're showing a single user via the show method. The show method could look like this:
+	 *
+	 * public function show(User $user)
+	 * {
+	 *		// do fancy stuff with user model
+	 * }
+	 *
+	 * The PUT request is a special case though. It can handle both creating a new record and updating an existing one.
+	 * Therefore we cannot simply return 404 if the model does not exist. Instead, the PUT request throws no
+	 * exception.
+	 *
+	 * If you do not typehint your method (take a look at the update method in this class), the variable passed
+	 * will be null. Otherwise an instance of your model with the ->exists property set to false is passed.
+	 *
+	 * public function update($user = null)
+	 * {
+	 * 		var_dump($user) // null if not found in database
+	 * }
+	 *
+	 * public function update(User $user)
+	 * {
+	 * 		var_dump($user->exists) // false if not found in database
+	 * }
+	 *
+	 * The latter is preferred for specific implementations where you know the model's type. Of course, we have no
+	 * knowledge of the implementing class's model (since we have no generics in PHP).
+	 *
+	 * @return callable
+     */
+	public static function getModelBindingCallback()
+	{
+		return function() {
+			$method = \Request::getMethod();
+
+			switch ($method) {
+				case Request::METHOD_GET:
+					throw new NotFoundHttpException;
+				case Request::METHOD_POST:
+					throw new NotFoundHttpException;
+				case Request::METHOD_PUT:
+					return null;
+				case Request::METHOD_PATCH:
+					throw new NotFoundHttpException;
+				case Request::METHOD_DELETE:
+					throw new NotFoundHttpException;
+			}
+
+			return null;
+		};
+	}
+
+	/**
 	 * Embeds data from a paginator instance inside the API response. Pagination metadata indicating number of pages,
 	 * totals, ... will be automatically added as well. Furthermore, links to the first, next, previous and last
 	 * pages will be added if applicable.
@@ -169,12 +224,8 @@ class HalApiResourceController extends HalApiController
 	 * @param $model
 	 * @return array
 	 */
-	public function show($model = null)
+	public function show($model)
 	{
-		if (!($model instanceof Model) || !$model->exists) {
-			throw new ModelNotFoundException;
-		}
-
 		$resource = new Item($model, $this->transformer);
 
 		return $this->api->item($this->manager, $resource)->build();
@@ -193,7 +244,7 @@ class HalApiResourceController extends HalApiController
 		/* @var Model $model */
 		$model = new $this->model;
 		$keys = array_keys($this->json->getArray());
-		$columnNames = \Schema::getColumnListing($model->getTable());
+		$columnNames = Schema::getColumnListing($model->getTable());
 
 		foreach ($columnNames as $column) {
 			if (!$model->isFillable($column)) {
@@ -226,11 +277,11 @@ class HalApiResourceController extends HalApiController
 			$model = new $this->model;
 		}
 
-		switch (Request::getMethod()) {
-			case 'PUT':
+		switch (\Request::getMethod()) {
+			case Request::METHOD_PUT:
 				$existed = $model->exists;
 				$keys = array_keys($this->json->getArray());
-				$columnNames = \Schema::getColumnListing($model->getTable());
+				$columnNames = Schema::getColumnListing($model->getTable());
 
 				foreach ($columnNames as $column) {
 					if (!$model->isFillable($column)) {
@@ -251,11 +302,7 @@ class HalApiResourceController extends HalApiController
 				}
 
 				return $existed ? $this->show($model) : \Response::make($this->show($model), Response::HTTP_CREATED);
-			case 'PATCH':
-				if (!$model->exists) {
-					throw new ModelNotFoundException;
-				}
-
+			case Request::METHOD_PATCH:
 				$model->update($this->json->getArray());
 				$model->syncOriginal();
 
@@ -266,16 +313,13 @@ class HalApiResourceController extends HalApiController
 	}
 
 	/**
-	 * @param null $model
+	 * @param $model
 	 * @return Response
 	 * @throws DatabaseConflictException
 	 */
-	public function destroy($model = null)
+	public function destroy($model)
 	{
-		if (!($model instanceof Model) || !$model->exists) {
-			throw new ModelNotFoundException;
-		}
-
+		/* @var Model $model */
 		try {
 			$model->delete();
 		} catch (Exception $e) {

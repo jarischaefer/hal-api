@@ -8,6 +8,7 @@ use Input;
 use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
 use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
+use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
 use Jarischaefer\HalApi\Routing\RouteHelper;
 use Jarischaefer\HalApi\Transformers\HalApiTransformer;
 use League\Fractal\Resource\Collection;
@@ -76,7 +77,7 @@ class HalApiResourceController extends HalApiController
 		if ($this->defaultPerPage < 1) {
 			$this->defaultPerPage = 5;
 		}
-		
+
 		$this->preparePagination();
 	}
 
@@ -87,11 +88,11 @@ class HalApiResourceController extends HalApiController
 	{
 		$this->currentPage = (int)Input::get(self::PAGINATION_CURRENT_PAGE, 1);
 		$this->perPage = (int)Input::get(self::PAGINATION_PER_PAGE, $this->defaultPerPage);
-		
+
 		if (!is_numeric($this->currentPage)) {
 			$this->currentPage = 1;
 		}
-		
+
 		if (!is_numeric($this->perPage)) {
 			$this->perPage = $this->defaultPerPage;
 		}
@@ -104,7 +105,7 @@ class HalApiResourceController extends HalApiController
 	 *
 	 * public function show(User $user)
 	 * {
-	 *		// do fancy stuff with user model
+	 *        // do fancy stuff with user model
 	 * }
 	 *
 	 * The PUT request is a special case though. It can handle both creating a new record and updating an existing one.
@@ -116,22 +117,22 @@ class HalApiResourceController extends HalApiController
 	 *
 	 * public function update($user = null)
 	 * {
-	 * 		var_dump($user) // null if not found in database
+	 *        var_dump($user) // null if not found in database
 	 * }
 	 *
 	 * public function update(User $user)
 	 * {
-	 * 		var_dump($user->exists) // false if not found in database
+	 *        var_dump($user->exists) // false if not found in database
 	 * }
 	 *
 	 * The latter is preferred for specific implementations where you know the model's type. Of course, we have no
 	 * knowledge of the implementing class's model (since we have no generics in PHP).
 	 *
 	 * @return callable
-     */
+	 */
 	public static function getModelBindingCallback()
 	{
-		return function() {
+		return function () {
 			$method = \Request::getMethod();
 
 			switch ($method) {
@@ -180,11 +181,11 @@ class HalApiResourceController extends HalApiController
 		$this->api->embedCollection($controller::getRelation(RouteHelper::SHOW), $this->manager, $resource);
 
 		$this->api->meta('pagination', [
-			'total'			=> $paginator->total(),
-			'count'			=> $paginator->count(),
-			'per_page'		=> $paginator->perPage(),
-			'current_page'	=> $paginator->currentPage(),
-			'pages'			=> $paginator->lastPage(),
+			'total' => $paginator->total(),
+			'count' => $paginator->count(),
+			'per_page' => $paginator->perPage(),
+			'current_page' => $paginator->currentPage(),
+			'pages' => $paginator->lastPage(),
 		]);
 
 		$this->api->link('first', HalLink::make($route, \Route::current()->parameters(), 'current_page=1', true));
@@ -238,6 +239,7 @@ class HalApiResourceController extends HalApiController
 	 *
 	 * @return Response
 	 * @throws BadPostRequestException
+	 * @throws DatabaseSaveException
 	 */
 	public function store()
 	{
@@ -256,8 +258,12 @@ class HalApiResourceController extends HalApiController
 			}
 		}
 
-		$model->setRawAttributes($this->json->getArray());
-		$model->save();
+		try {
+			$model->setRawAttributes($this->json->getArray());
+			$model->save();
+		} catch (Exception $e) {
+			throw new DatabaseSaveException('Model could not be created.', 0, $e);
+		}
 
 		return \Response::make($this->show($model), Response::HTTP_CREATED);
 	}
@@ -268,7 +274,8 @@ class HalApiResourceController extends HalApiController
 	 *
 	 * @param null $model
 	 * @return array
-	 * @throws Exception
+	 * @throws BadPutRequestException
+	 * @throws DatabaseSaveException
 	 */
 	public function update($model = null)
 	{
@@ -293,22 +300,30 @@ class HalApiResourceController extends HalApiController
 					}
 				}
 
-				if ($model->exists) {
-					$model->update($this->json->getArray());
-					$model->syncOriginal();
-				} else {
-					$model->setRawAttributes($this->json->getArray(), true);
-					$model->save();
+				try {
+					if ($model->exists) {
+						$model->update($this->json->getArray());
+						$model->syncOriginal();
+					} else {
+						$model->setRawAttributes($this->json->getArray(), true);
+						$model->save();
+					}
+				} catch (Exception $e) {
+					throw new DatabaseSaveException('Model could not be saved.', 0, $e);
 				}
 
 				return $existed ? $this->show($model) : \Response::make($this->show($model), Response::HTTP_CREATED);
 			case Request::METHOD_PATCH:
-				$model->update($this->json->getArray());
-				$model->syncOriginal();
+				try {
+					$model->update($this->json->getArray());
+					$model->syncOriginal();
+				} catch (Exception $e) {
+					throw new DatabaseSaveException('Model could not be updated.', 0, $e);
+				}
 
 				return $this->show($model);
 			default:
-				throw new Exception('Update has to be called via PUT or PATCH.');
+				return \Response::make('', Response::HTTP_METHOD_NOT_ALLOWED);
 		}
 	}
 
@@ -319,14 +334,14 @@ class HalApiResourceController extends HalApiController
 	 */
 	public function destroy($model)
 	{
-		/* @var Model $model */
 		try {
+			/* @var Model $model */
 			$model->delete();
+
+			return \Response::make($this->api->build(), Response::HTTP_NO_CONTENT);
 		} catch (Exception $e) {
 			throw new DatabaseConflictException('Model could not be deleted: ' . $model->{$model->getKeyName()});
 		}
-
-		return \Response::make($this->api->build(), Response::HTTP_NO_CONTENT);
 	}
-	
+
 }

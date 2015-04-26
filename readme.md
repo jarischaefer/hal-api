@@ -240,10 +240,24 @@ RouteHelper::make($router)
 		->done() // Close the resource block
 		
 		->resource('posts', PostsController::class)
+		->done()
 
 		->resource('comments', CommentsController::class)
 		->done()
 	
+```
+
+#### RouteServiceProvider
+
+```php
+public function boot(Router $router)
+	{
+		parent::boot($router);
+
+		$router->model('users', User::class, HalApiResourceController::getModelBindingCallback());
+		$router->model('posts', Post::class, HalApiResourceController::getModelBindingCallback());
+		$router->model('comments', Comment::class, HalApiResourceController::getModelBindingCallback());
+	}
 ```
 
 #### JSON for a specific model (show)

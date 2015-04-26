@@ -1,5 +1,6 @@
 <?php namespace Jarischaefer\HalApi;
 
+use Illuminate\Foundation\Bus\DispatchesCommands;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller;
 use Illuminate\Routing\Route;
@@ -16,7 +17,7 @@ use League\Fractal\Serializer\ArraySerializer;
 abstract class HalApiController extends Controller
 {
 
-	use ValidatesRequests;
+	use DispatchesCommands, ValidatesRequests;
 
 	/**
 	 * @var Manager

@@ -32,11 +32,6 @@ Register the Service Provider in your config/app.php file.
 
 ## Examples
 
-### HAL Resource Controller
-
-A resource controller consists of three components: **Controller**, **Transformer** and **Model**.
-The Transformer is based on [Fractal](http://fractal.thephpleague.com).
-
 #### Models
 
 The following is a simple relationship with three tables. The user has two One-To-Many relationships with both Posts and Comments.
@@ -99,7 +94,8 @@ class Comment extends Model
 
 #### Transformer
 
-Transformers provide an additional layer between your models and the controller. They help you create a Hal response for either a single item or a collection of items.
+Transformers provide an additional layer between your models and the controller.
+They help you create a HAL response for either a single item or a collection of items.
 
 ```php
 class UserTransformer extends HalApiTransformer
@@ -201,6 +197,12 @@ class HomeController extends HalApiController
 	}
 
 }
+
+### HAL Resource Controller
+
+A resource controller consists of three components: **Controller**, **Transformer** and **Model**.
+The model holds data, typically a table row. This data can be transformed to a HAL response using a transformer.
+Finally, the controller handles all requests for a given resource and utilizes models and transformers to form its responses.
 
 class UsersController extends HalApiResourceController
 {
@@ -352,6 +354,11 @@ RouteHelper::make($router)
 
 #### RouteServiceProvider
 
+Make sure you bind all route parameters in the RouteServiceProvider.
+The callback shown below handles missing parameters depending on the request method.
+For instance, a GET request for a nonexistent database record should yield a 404 response.
+The same is true for all other HTTP methods except for PUT. PUT simply creates the resource if it did not exist before.
+
 ```php
 public function boot(Router $router)
 {
@@ -361,6 +368,75 @@ public function boot(Router $router)
 	$router->model('users', User::class, $callback);
 	$router->model('posts', Post::class, $callback);
 	$router->model('comments', Comment::class, $callback);
+}
+```
+
+#### Exception handler
+
+The callback above throws NotFoundHttpException if no record was found.
+To create a proper response instead of an error page, the exception handler must be amended.
+As shown below, various HTTP status codes like 404 and 422 will be returned depending on the exception caught.
+
+```php
+<?php namespace App\Exceptions;
+
+use Config;
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Session\TokenMismatchException;
+use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
+use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
+use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
+use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+
+class Handler extends ExceptionHandler {
+
+	/**
+	 * Report or log an exception.
+	 *
+	 * @param  \Exception  $e
+	 * @return void
+	 */
+	public function report(Exception $e)
+	{
+		parent::report($e);
+	}
+
+	/**
+	 * Render an exception into a response.
+	 *
+	 * @param  \Illuminate\Http\Request  $request
+	 * @param  \Exception  $e
+	 * @return \Illuminate\Http\Response
+	 */
+	public function render($request, Exception $e)
+	{
+		switch (get_class($e)) {
+			case ModelNotFoundException::class:
+				return response('', Response::HTTP_NOT_FOUND);
+			case NotFoundHttpException::class:
+				return response('', Response::HTTP_NOT_FOUND);
+			case BadPutRequestException::class:
+				return response('', Response::HTTP_UNPROCESSABLE_ENTITY);
+			case BadPostRequestException::class:
+				return response('', Response::HTTP_UNPROCESSABLE_ENTITY);
+			case TokenMismatchException::class:
+				return response('', Response::HTTP_FORBIDDEN);
+			case DatabaseConflictException::class:
+				return response('', Response::HTTP_CONFLICT);
+			case DatabaseSaveException::class:
+				$this->report($e);
+				return response('', Response::HTTP_UNPROCESSABLE_ENTITY);
+			default:
+				$this->report($e);
+
+				return Config::get('app.debug') ? parent::render($request, $e) : response('', Response::HTTP_INTERNAL_SERVER_ERROR);
+		}
+	}
+
 }
 ```
 
@@ -561,12 +637,6 @@ The following is an index. It contains multiple models inside the _embedded fiel
 	}
 }
 ```
-
-#### HAL Controller
-
-The HAL Controller automatically adds all descending routes to the current resource. In the above examples,
-taking http://hal-api.development/users as our current resource, everything to its right (e.g. /users/123 or /users/123/posts)
-would be considered a child. Child links as well as self and parent links are automatically added to the _links field.
 
 ## Contributing
 

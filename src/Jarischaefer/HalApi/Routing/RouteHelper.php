@@ -231,19 +231,19 @@ class RouteHelper
 	 * return the latter route if called with the former. If no parent is present (e.g. the / route), the uppermost
 	 * route will be returned (always /).
 	 *
-	 * @param Route $route
+	 * @param Route $child
 	 * @return Route
 	 */
-	public static function parent(Route $route)
+	public static function parent(Route $child)
 	{
 		// TODO reflection mess
 
-		if (array_key_exists($route->getUri(), self::$parentRouteCache)) {
-			return self::$parentRouteCache[$route->getUri()];
+		if (array_key_exists($child->getUri(), self::$parentRouteCache)) {
+			return self::$parentRouteCache[$child->getUri()];
 		}
 
-		$lastSlash = strripos($route->getUri(), '/');
-		$guessedParentUri = $lastSlash !== FALSE ? substr($route->getUri(), 0, $lastSlash) : '/';
+		$lastSlash = strripos($child->getUri(), '/');
+		$guessedParentUri = $lastSlash !== FALSE ? substr($child->getUri(), 0, $lastSlash) : '/';
 		$request = new Request();
 		$reflectionClass = new ReflectionClass($request);
 		$pathInfo = $reflectionClass->getProperty('pathInfo');
@@ -259,7 +259,7 @@ class RouteHelper
 				$route = \Route::getRoutes()->match($request);
 
 				if ($route instanceof Route) {
-					return self::$parentRouteCache[$route->getUri()] = $route;
+					return self::$parentRouteCache[$child->getUri()] = $route;
 				}
 			} catch (Exception $e) {}
 
@@ -267,7 +267,7 @@ class RouteHelper
 			$guessedParentUri = substr($guessedParentUri, 0, strripos($guessedParentUri, '/'));
 		}
 
-		return $route; // return the same route if no parent exists
+		return $child; // return the same route if no parent exists
 	}
 
 	/**

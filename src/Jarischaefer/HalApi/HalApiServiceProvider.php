@@ -28,12 +28,12 @@ class HalApiServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-		$this->app->singleton('hal-api', function()
+		$this->app->bind('hal-api', function()
 		{
-			return new HalApi();
+			return new HalApiElement;
 		});
 
-		$this->app->bind(HalApiContract::class, HalApi::class);
+		$this->app->bind(HalApiContract::class, HalApiElement::class);
 	}
 
 	/**

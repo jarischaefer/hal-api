@@ -1,14 +1,13 @@
 <?php namespace Jarischaefer\HalApi;
 
+use App;
 use Illuminate\Foundation\Bus\DispatchesCommands;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller;
-use Illuminate\Routing\Route;
 use Input;
-use InvalidArgumentException;
+use Jarischaefer\HalApi\Exceptions\NotImplementedException;
 use Jarischaefer\HalApi\Routing\RouteHelper;
-use League\Fractal\Manager;
-use League\Fractal\Serializer\ArraySerializer;
+use RuntimeException;
 
 /**
  * Class HalApiController
@@ -20,101 +19,88 @@ abstract class HalApiController extends Controller
 	use DispatchesCommands, ValidatesRequests;
 
 	/**
-	 * @var Manager
+	 * @var SafeIndexArray
 	 */
-	protected $manager;
-	/**
-	 * @var HalApiContract
-	 */
-	protected $api;
+	protected $parameters;
 	/**
 	 * @var SafeIndexArray
 	 */
-	protected $input;
-	/**
-	 * @var array
-	 */
-	protected $json;
+	protected $body;
 
-	
-	public final function __construct(Manager $manager, ArraySerializer $serializer, HalApiContract $api)
+	protected $self;
+
+	protected $parent;
+
+	public function __construct()
 	{
+		$this->parameters = new SafeIndexArray(Input::all());
+		$this->body = new SafeIndexArray(Input::json()->all());
+
 		$routeParameters = \Route::current() ? \Route::current()->parameters() : [];
-
-		$this->manager = $manager;
-		$this->manager->setSerializer($serializer);
-
-		$this->input = new SafeIndexArray(Input::all());
-		$this->json = new SafeIndexArray(Input::json()->all());
-
-		$this->api = $api;
-		$this->api->self(HalLink::make(\Route::current(), $routeParameters, \Route::getCurrentRequest()->getQueryString()));
-		$this->api->parent(HalLink::make(RouteHelper::parent(\Route::current()), $routeParameters));
-		$subordinateRoutes = RouteHelper::subordinates(\Route::current());
-
-		/* @var Route $route */
-		foreach ($subordinateRoutes as $route) {
-			$this->addLink($route, \Route::current()->parameters());
-		}
-
-		if (Input::has('include')) {
-			$this->manager->parseIncludes(Input::get('include'));
-		}
-
-		$this->boot();
+		$this->self = HalLink::make(\Route::current(), $routeParameters, \Route::getCurrentRequest()->getQueryString());
+		$this->parent = HalLink::make(RouteHelper::parent(\Route::current()), $routeParameters);
 	}
-	
-	protected function boot()
+
+	public static function make()
 	{
-
+		return new static;
 	}
-	
-	private function addLink(Route $route, $parameters = [], $queryString = '', $keepOriginalQueryString = false)
+
+	protected function createResponse()
 	{
-		$actionName = $route->getActionName();
-
-		// valid routes are backed by a controller (e.g. App\Http\Controllers\MyController@doSomething)
-		if (!str_contains($actionName, '@')) {
-			return;
-		}
-
-		list($class, $method) = explode('@', $actionName);
-
-		// only add a link if this class is its controller's parent
-		if (!is_subclass_of($class, __CLASS__)) {
-			return;
-		}
-
-		/* @var HalApiController $class */
-		$link = HalLink::make($route, $parameters, $queryString, $keepOriginalQueryString);
-		$this->api->link($class::getRelation($method), $link);
+		return HalApiElement::make($this->self, $this->parent);
 	}
-	
+
+	/**
+	 * Returns a controller's relation. The relation is a way of interacting with resources using
+	 * a name rather than relying on a hyperlink. Legacy web applications typically construct
+	 * hyperlinks manually. Changing protocols from http to https, switching domain names or suddenly
+	 * running your application in a subdirectory (http://my.app.example.com/users becomes http://example.com/php/myapp/users)
+	 * will very likely break such code. HATEOAS refers to resources by relation rather than hyperlink.
+	 * The URL http://my.app.example.com/users could be referred to as users.index and should include
+	 * a hyperlink called self containing aforementioned URL.
+	 *
+	 * Check out http://stateless.co/hal_specification.html
+	 *
+	 * @param string $action
+	 * @return string
+	 */
 	public static function getRelation($action = null)
 	{
-		// TODO messy
-		$baseName = class_basename(get_called_class());
-		
-		if (!str_contains($baseName, 'Controller')) {
-			$rel = strtolower($baseName);
-			return empty($action) ? $rel : $rel . '.' . $action;
-		} else {
-			$rel = explode('Controller', $baseName);
-			return empty($action) ? strtolower($rel[0]) : strtolower($rel[0]) . '.' . $action;
-		}
+		throw new NotImplementedException('Child classes must implement this method');
 	}
-	
+
+	/**
+	 * Returns the action name (e.g. App\Http\Controllers\MyController@doSomething).
+	 *
+	 * @param string $methodName
+	 * @return string
+	 */
 	public static function actionName($methodName)
 	{
 		return get_called_class() . '@' . $methodName;
 	}
-	
+
+	/**
+	 * Generates a URL for the given method name and parameters.
+	 * If your routes.php contains an entry for /users linked to the
+	 * index method and another entry for /users/{users} linked to the
+	 * show method, then a call to this method would yield the following result:
+	 *
+	 * UsersController::action('show', '99e31491-dd32-4e2c-b221-7deeb6cc4853')
+	 *
+	 * http://my.app.example.com/users/99e31491-dd32-4e2c-b221-7deeb6cc4853
+	 *
+	 * @param string $methodName
+	 * @param array $parameters
+	 * @return string
+	 */
 	public static function action($methodName, $parameters = [])
 	{
 		$class = get_called_class();
 
 		if (!method_exists($class, $methodName)) {
-			throw new InvalidArgumentException('Method does not exist.');
+			throw new RuntimeException('Method does not exist!');
 		}
 
 		$parameters = is_array($parameters) ? $parameters : [$parameters];
@@ -122,5 +108,5 @@ abstract class HalApiController extends Controller
 
 		return action($actionName, $parameters);
 	}
-	
+
 }

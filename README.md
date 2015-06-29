@@ -99,26 +99,49 @@ class Comment extends Model
 
 #### Transformer
 
-Read more about transformers in the [Fractal Docs](http://fractal.thephpleague.com/transformers/). They provide an additional layer between your models and how they will be represented in the API.
+Transformers provide an additional layer between your models and the controller. They help you create a Hal response for either a single item or a collection of items.
 
 ```php
 class UserTransformer extends HalApiTransformer
 {
 
-	protected function boot()
+	private $routeUsersShow;
+	
+	public function __construct()
 	{
-		$this->data = [
-			'id' => (int)$this->model->id,
-			'username' => (string)$this->model->username,
-			'email' => (string)$this->model->email,
-			'firstname' => (string)$this->model->firstname,
-			'lastname' => (string)$this->model->lastname,
-			'disabled' => (bool)$this->model->disabled,
-		];
+		$this->routeUsersShow = RouteHelper::byAction(UsersController::actionName(RouteHelper::SHOW));
+	}
 
-		$show = RouteHelper::byAction(UsersController::actionName(RouteHelper::SHOW));
-		$this->self = HalLink::make($show, $this->model->id); // Define the link to the current user (e.g. /users/123)
-		$this->parent = HalLink::make(RouteHelper::parent($show)); // Define the link to the current user's parent (e.g. /users/123 -> /users)
+	public function transform(Model $model)
+	{
+		return [
+			'id' => (int)$model->id,
+			'username' => (string)$model->username,
+			'email' => (string)$model->email,
+			'firstname' => (string)$model->firstname,
+			'lastname' => (string)$model->lastname,
+			'disabled' => (bool)$model->disabled,
+		];
+	}
+
+	protected function getSelf(Model $model)
+	{
+		return HalLink::make($this->routeUsersShow, $model->id); // Defines the link to the current user (e.g. /users/123)
+	}
+
+	protected function getParent(Model $model)
+	{
+		return HalLink::make(RouteHelper::parent($this->routeUsersShow)); // Defines the link to the current user's parent (e.g. /users/123 -> /users)
+	}
+
+	protected function getLinks(Model $model)
+	{
+		return [];
+	}
+
+	protected function getEmbedded(Model $model)
+	{
+		return [];
 	}
 
 }
@@ -126,18 +149,41 @@ class UserTransformer extends HalApiTransformer
 class PostTransformer extends HalApiTransformer
 {
 
-	protected function boot()
+	private $routePostsShow;
+	
+	public function __construct()
 	{
-		$this->data = [
+		$this->routePostsShow = RouteHelper::byAction(PostsController::actionName(RouteHelper::SHOW));
+	}
+
+	public function transform(Model $model)
+	{
+		return [
 			'id' => (int)$this->model->id,
 			'title' => (string)$this->model->title,
 			'text' => (string)$this->model->text,
 			'user_id' => (int)$this->model->user_id,
 		];
+	}
+	
+	protected function getSelf(Model $model)
+	{
+		return HalLink::make($this->routePostsShow, $model->id); // Defines the link to the current post (e.g. /posts/123)
+	}
 
-		$show = RouteHelper::byAction(PostsController::actionName(RouteHelper::SHOW));
-		$this->self = HalLink::make($show, $this->model->id); // Define the link to the current user (e.g. /posts/123)
-		$this->parent = HalLink::make(RouteHelper::parent($show)); // Define the link to the current user's parent (e.g. /comments/123 -> /posts)
+	protected function getParent(Model $model)
+	{
+		return HalLink::make(RouteHelper::parent($this->routePostsShow)); // Defines the link to the current posts's parent (e.g. /posts/123 -> /posts)
+	}
+
+	protected function getLinks(Model $model)
+	{
+		return [];
+	}
+
+	protected function getEmbedded(Model $model)
+	{
+		return [];
 	}
 
 } 
@@ -151,7 +197,7 @@ class HomeController extends HalApiController
 
 	public function index()
 	{
-		return $this->api->build(); // Simply return the API
+		return $this->createResponse()->build(); // Simply return the API
 	}
 
 }
@@ -159,44 +205,65 @@ class HomeController extends HalApiController
 class UsersController extends HalApiResourceController
 {
 
-	/* @var PostTransformer */
+	const RELATION = 'users';
+
+	/**
+	 * @var HalApiTransformer
+	 */
 	private $postTransformer;
-	
-	/* @var CommentTransformer */
+	/**
+	 * @var HalApiTransformer
+	 */
 	private $commentTransformer;
 
+	/**
+	 * {@inheritdoc}
+	 */
 	protected function boot()
 	{
 		parent::boot();
 
-		$this->transformer = new UserTransformer(); // The transformer used to display models
-		$this->model = User::class; // The model that belongs to the controller
-
 		// Additional transformers used for relationships
-		$this->postTransformer = new PostTransformer();
-		$this->commentTransformer = new CommentTransformer();
+		$this->postTransformer = new PostTransformer;
+		$this->commentTransformer = new CommentTransformer;
 	}
 
 	public function posts(User $user)
 	{
-		if (!$user || !$user->exists) {
-			return Response::make('', 404);
-		}
-
 		$posts = $user->posts()->paginate($this->perPage);
 
-		return $this->paginate($posts, PostsController::class, $this->postTransformer)->build();
+		return PostsController::make()->paginate($posts)->build();
 	}
 
 	public function comments(User $user)
 	{
-		if (!$user || !$user->exists) {
-			return Response::make('', 404);
-		}
-
 		$comments = $user->comments()->paginate($this->perPage);
 
-		return $this->paginate($comments, CommentsController::class, $this->commentTransformer)->build();
+		return CommentsController::make()->paginate($comments)->build();
+	}
+	
+	/**
+	 * {@inheritdoc}
+	 */
+	protected function getTransformer()
+	{
+		return new UserTransformer;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	protected function getModel()
+	{
+		return User::class;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public static function getRelation($action = null)
+	{
+		return $action ? self::RELATION . '.' . $action : self::RELATION;
 	}
 
 }
@@ -204,12 +271,30 @@ class UsersController extends HalApiResourceController
 class PostsController extends HalApiResourceController
 {
 
-	protected function boot()
-	{
-		parent::boot();
+	const RELATION = 'posts';
 
-		$this->transformer = new PostTransformer();
-		$this->model = Post::class;
+	/**
+	 * {@inheritdoc}
+	 */
+	protected function getTransformer()
+	{
+		return new PostTransformer;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	protected function getModel()
+	{
+		return Post::class;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public static function getRelation($action = null)
+	{
+		return $action ? self::RELATION . '.' . $action : self::RELATION;
 	}
 
 }
@@ -217,12 +302,30 @@ class PostsController extends HalApiResourceController
 class CommentsController extends HalApiResourceController
 {
 
-	protected function boot()
-	{
-		parent::boot();
+	const RELATION = 'comments';
 
-		$this->transformer = new CommentTransformer();
-		$this->model = Comment::class;
+	/**
+	 * {@inheritdoc}
+	 */
+	protected function getTransformer()
+	{
+		return new CommentTransformer;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	protected function getModel()
+	{
+		return Comment::class;
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public static function getRelation($action = null)
+	{
+		return $action ? self::RELATION . '.' . $action : self::RELATION;
 	}
 
 }
@@ -232,18 +335,18 @@ class CommentsController extends HalApiResourceController
 
 ```php
 RouteHelper::make($router)
-		->get('/', HomeController::class, 'index') // Link GET / to the index method in HomeController
+	->get('/', HomeController::class, 'index') // Link GET / to the index method in HomeController
 		
-		->resource('users', UsersController::class) // Start a new resource block
-			->get('posts', 'posts') // Link GET /users/{users}/posts to the posts method in UsersController
-			->get('comments', 'comments') // Links GET /users/{users}/comments to the comments method in UsersController
-		->done() // Close the resource block
+	->resource('users', UsersController::class) // Start a new resource block
+		->get('posts', 'posts') // Link GET /users/{users}/posts to the posts method in UsersController
+		->get('comments', 'comments') // Links GET /users/{users}/comments to the comments method in UsersController
+	->done() // Close the resource block
 		
-		->resource('posts', PostsController::class)
-		->done()
+	->resource('posts', PostsController::class)
+	->done()
 
-		->resource('comments', CommentsController::class)
-		->done()
+	->resource('comments', CommentsController::class)
+	->done()
 	
 ```
 
@@ -251,13 +354,14 @@ RouteHelper::make($router)
 
 ```php
 public function boot(Router $router)
-	{
-		parent::boot($router);
+{
+	parent::boot($router);
 
-		$router->model('users', User::class, HalApiResourceController::getModelBindingCallback());
-		$router->model('posts', Post::class, HalApiResourceController::getModelBindingCallback());
-		$router->model('comments', Comment::class, HalApiResourceController::getModelBindingCallback());
-	}
+	$callback = HalApiResourceController::getModelBindingCallback();
+	$router->model('users', User::class, $callback);
+	$router->model('posts', Post::class, $callback);
+	$router->model('comments', Comment::class, $callback);
+}
 ```
 
 #### JSON for a specific model (show)

@@ -10,9 +10,6 @@ use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
 use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
 use Jarischaefer\HalApi\Routing\RouteHelper;
-use Jarischaefer\HalApi\Transformers\HalApiTransformer;
-use League\Fractal\Resource\Collection;
-use League\Fractal\Resource\Item;
 use Schema;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,9 +19,13 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  * Class HalApiResourceController
  * @package Jarischaefer\hal-api
  */
-class HalApiResourceController extends HalApiController
+abstract class HalApiResourceController extends HalApiController
 {
 
+	/**
+	 * Configuration key for default pagination size (number of items per page).
+	 */
+	const CONFIG_PAGINATION_DEFAULT_PER_PAGE = 'pagination.default.per_page';
 	/**
 	 * Query parameter name used for pagination's current page.
 	 */
@@ -33,6 +34,11 @@ class HalApiResourceController extends HalApiController
 	 * Query parameter name used for pagination's item count per page.
 	 */
 	const PAGINATION_PER_PAGE = 'per_page';
+	/**
+	 * Default number of items per pagination page. Used as a fallback if the value
+	 * provided via configuration is invalid.
+	 */
+	const PAGINATION_DEFAULT_ITEMS_PER_PAGE = 5;
 
 	/**
 	 * @var int
@@ -66,19 +72,41 @@ class HalApiResourceController extends HalApiController
 	protected $perPage;
 
 	/**
-	 * Boots the controller and calls necessary initialization methods.
+	 * Returns an instance of a transformer to be used for all transformations in this controller.
+	 *
+	 * @return HalApiTransformer
 	 */
-	protected function boot()
-	{
-		parent::boot();
+	abstract protected function getTransformer();
 
-		$this->defaultPerPage = (int)Config::get('pagination.default.per_page');
+	/**
+	 * The full class name for the controller's model.
+	 *
+	 * @return string
+	 */
+	abstract protected function getModel();
+
+	public final function __construct()
+	{
+		parent::__construct();
+
+		$this->transformer = $this->getTransformer();
+		$this->model = $this->getModel();
+
+		$this->defaultPerPage = (int)Config::get(self::CONFIG_PAGINATION_DEFAULT_PER_PAGE);
 
 		if ($this->defaultPerPage < 1) {
-			$this->defaultPerPage = 5;
+			$this->defaultPerPage = self::PAGINATION_DEFAULT_ITEMS_PER_PAGE;
 		}
 
 		$this->preparePagination();
+		$this->boot();
+	}
+
+	/**
+	 * Children may override this method.
+	 */
+	protected function boot()
+	{
 	}
 
 	/**
@@ -158,29 +186,21 @@ class HalApiResourceController extends HalApiController
 	 * pages will be added if applicable.
 	 *
 	 * @param LengthAwarePaginator $paginator
-	 * @param null $controller
-	 * @param HalApiTransformer $transformer
 	 * @return HalApiContract
 	 * @throws Exception
 	 */
-	protected function paginate(LengthAwarePaginator $paginator, $controller = null, HalApiTransformer $transformer = null)
+	protected function paginate(LengthAwarePaginator $paginator)
 	{
-		/* @var HalApiResourceController $controller */
-		if ($controller == null) {
-			$controller = get_called_class(); // use self if no specific class was passed
-		} else if (!is_subclass_of($controller, __CLASS__)) {
-			throw new Exception('Non-default controller must extend ' . __CLASS__);
-		}
-
-		if ($transformer == null) {
-			$transformer = $this->transformer;
-		}
-
 		$route = \Route::current();
-		$resource = new Collection($paginator->items(), $transformer);
-		$this->api->embedCollection($controller::getRelation(RouteHelper::SHOW), $this->manager, $resource);
+		$routeParameters = \Route::current()->parameters();
+		$self = HalLink::make($route, $routeParameters, null, true);
+		$parent = HalLink::make(RouteHelper::parent($route), $routeParameters);
+		$response = new HalApiElement($self, $parent);
+		$response->embedFromArray([
+			static::getRelation(RouteHelper::SHOW) => $this->transformer->collection($paginator->items()),
+		]);
 
-		$this->api->meta('pagination', [
+		$response->meta('pagination', [
 			'total' => $paginator->total(),
 			'count' => $paginator->count(),
 			'per_page' => $paginator->perPage(),
@@ -188,19 +208,19 @@ class HalApiResourceController extends HalApiController
 			'pages' => $paginator->lastPage(),
 		]);
 
-		$this->api->link('first', HalLink::make($route, \Route::current()->parameters(), 'current_page=1', true));
+		$response->link('first', HalLink::make($route, $routeParameters, 'current_page=1', true));
 
 		if ($paginator->currentPage() > 1) {
-			$this->api->link('prev', HalLink::make($route, \Route::current()->parameters(), 'current_page=' . ($paginator->currentPage() - 1), true));
+			$response->link('prev', HalLink::make($route, $routeParameters, 'current_page=' . ($paginator->currentPage() - 1), true));
 		}
 
 		if ($paginator->currentPage() < $paginator->lastItem()) {
-			$this->api->link('next', HalLink::make($route, \Route::current()->parameters(), 'current_page=' . ($paginator->currentPage() + 1), true));
+			$response->link('next', HalLink::make($route, $routeParameters, 'current_page=' . ($paginator->currentPage() + 1), true));
 		}
 
-		$this->api->link('last', HalLink::make($route, \Route::current()->parameters(), 'current_page=' . $paginator->lastPage(), true));
+		$response->link('last', HalLink::make($route, $routeParameters, 'current_page=' . $paginator->lastPage(), true));
 
-		return $this->api;
+		return $response;
 	}
 
 	/**
@@ -227,9 +247,7 @@ class HalApiResourceController extends HalApiController
 	 */
 	public function show($model)
 	{
-		$resource = new Item($model, $this->transformer);
-
-		return $this->api->item($this->manager, $resource)->build();
+		return $this->transformer->item($model)->build();
 	}
 
 	/**
@@ -245,7 +263,7 @@ class HalApiResourceController extends HalApiController
 	{
 		/* @var Model $model */
 		$model = new $this->model;
-		$keys = array_keys($this->json->getArray());
+		$keys = array_keys($this->body->getArray());
 		$columnNames = Schema::getColumnListing($model->getTable());
 
 		foreach ($columnNames as $column) {
@@ -259,7 +277,7 @@ class HalApiResourceController extends HalApiController
 		}
 
 		try {
-			$model->setRawAttributes($this->json->getArray());
+			$model->setRawAttributes($this->body->getArray());
 			$model->save();
 		} catch (Exception $e) {
 			throw new DatabaseSaveException('Model could not be created.', 0, $e);
@@ -287,7 +305,7 @@ class HalApiResourceController extends HalApiController
 		switch (\Request::getMethod()) {
 			case Request::METHOD_PUT:
 				$existed = $model->exists;
-				$keys = array_keys($this->json->getArray());
+				$keys = array_keys($this->body->getArray());
 				$columnNames = Schema::getColumnListing($model->getTable());
 
 				foreach ($columnNames as $column) {
@@ -302,10 +320,10 @@ class HalApiResourceController extends HalApiController
 
 				try {
 					if ($model->exists) {
-						$model->update($this->json->getArray());
+						$model->update($this->body->getArray());
 						$model->syncOriginal();
 					} else {
-						$model->setRawAttributes($this->json->getArray(), true);
+						$model->setRawAttributes($this->body->getArray(), true);
 						$model->save();
 					}
 				} catch (Exception $e) {
@@ -315,7 +333,7 @@ class HalApiResourceController extends HalApiController
 				return $existed ? $this->show($model) : \Response::make($this->show($model), Response::HTTP_CREATED);
 			case Request::METHOD_PATCH:
 				try {
-					$model->update($this->json->getArray());
+					$model->update($this->body->getArray());
 					$model->syncOriginal();
 				} catch (Exception $e) {
 					throw new DatabaseSaveException('Model could not be updated.', 0, $e);
@@ -337,11 +355,11 @@ class HalApiResourceController extends HalApiController
 		try {
 			/* @var Model $model */
 			$model->delete();
-
-			return \Response::make($this->api->build(), Response::HTTP_NO_CONTENT);
 		} catch (Exception $e) {
 			throw new DatabaseConflictException('Model could not be deleted: ' . $model->{$model->getKeyName()});
 		}
+
+		return response('', Response::HTTP_NO_CONTENT);
 	}
 
 }

@@ -1,6 +1,7 @@
 <?php namespace Jarischaefer\HalApi;
 
 use Illuminate\Routing\Route;
+use URL;
 
 /**
  * Class HalLink
@@ -23,7 +24,7 @@ class HalLink
 	/**
 	 * @var bool
 	 */
-	private $isTemplated;
+	private $templated;
 	/**
 	 * @var string
 	 */
@@ -43,7 +44,7 @@ class HalLink
 	{
 		$this->route = $route;
 		$this->parameters = is_array($parameters) ? $parameters : [$parameters];
-		$this->isTemplated = count($this->route->parameterNames()) > 0 ? true : false;
+		$this->templated = count($this->route->parameterNames()) > 0 ? true : false;
 		$this->queryString = $queryString;
 		$this->originalQueryString = $keepOriginalQueryString ? \Request::getQueryString() : '';
 		$this->link = $this->buildLink();
@@ -67,12 +68,12 @@ class HalLink
 	private function buildLink()
 	{
 		// if our link is templated (e.g. example.com/api/items/{id}), we will generate it using the action() method
-		if ($this->isTemplated) {
+		if ($this->templated) {
 			list($class, $method) = explode('@', $this->route->getActionName());
 			$className = class_basename($class);
 			$link = action($className . '@' . $method, $this->parameters);
 		} else {
-			$link = \URL::to($this->route->getUri());
+			$link = URL::to($this->route->getUri());
 		}
 
 		return $link . $this->buildQueryString();
@@ -120,7 +121,7 @@ class HalLink
 	 */
 	public function isTemplated()
 	{
-		return $this->isTemplated;
+		return $this->templated;
 	}
 
 	/**
@@ -140,11 +141,24 @@ class HalLink
 	}
 
 	/**
+	 * Returns the link's array representation.
+	 *
+	 * @return array
+	 */
+	public function build()
+	{
+		return [
+			'href' => $this->getLink(),
+			'templated' => $this->templated,
+		];
+	}
+
+	/**
 	 * @return string
 	 */
 	public function __toString()
 	{
-		return json_encode($this->toArray());
+		return json_encode($this->build());
 	}
 
 	/**
@@ -152,10 +166,7 @@ class HalLink
 	 */
 	public function toArray()
 	{
-		return [
-			'href' => $this->getLink(),
-			'templated' => $this->isTemplated,
-		];
+		return $this->build();
 	}
 
 }

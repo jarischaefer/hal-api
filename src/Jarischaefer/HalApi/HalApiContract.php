@@ -1,9 +1,5 @@
 <?php namespace Jarischaefer\HalApi;
 
-use League\Fractal\Manager;
-use League\Fractal\Resource\Collection;
-use League\Fractal\Resource\Item;
-
 /**
  * Interface HalApiContract
  * @package Jarischaefer\HalApi
@@ -19,6 +15,13 @@ interface HalApiContract
 	 * The name of the link pointing to the current resource's parent.
 	 */
 	const PARENT = 'parent';
+
+	/**
+	 * Flag which indicates if subordinate routes should be added to the response automatically.
+	 *
+	 * @var boolean
+	 */
+	public function setAutoSubordinateRoutes($flag);
 
 	/**
 	 * Adds an item directly to the API's root. The following keys are not allowed: data, meta, _links, _embedded.
@@ -81,15 +84,6 @@ interface HalApiContract
 	public function dataFromArray(array $data);
 
 	/**
-	 * Parses data from an item and adds it to the API. Existing data will be overwritten.
-	 *
-	 * @param Manager $manager
-	 * @param Item $item
-	 * @return $this
-	 */
-	public function item(Manager $manager, Item $item);
-
-	/**
 	 * Adds a link. Existing relations will be overwritten.
 	 *
 	 * @param $relation
@@ -124,19 +118,6 @@ interface HalApiContract
 	 * @return $this
 	 */
 	public function embedFromArray(array $embed);
-
-	/**
-	 * Embeds multiple sub-API elements taken from a collection to
-	 * the current API's _embedded field.
-	 *
-	 * Already existing relations will be overwritten.
-	 *
-	 * @param $relation
-	 * @param Manager $manager
-	 * @param Collection $collection
-	 * @return $this
-	 */
-	public function embedCollection($relation, Manager $manager, Collection $collection);
 
 	/**
 	 * Returns the API as an array.

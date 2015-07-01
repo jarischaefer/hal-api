@@ -251,7 +251,7 @@ class RouteHelper
 		$requestUri = $reflectionClass->getProperty('requestUri');
 		$requestUri->setAccessible(true);
 
-		while ($guessedParentUri != '') {
+		while (true) {
 			$pathInfo->setValue($request, $guessedParentUri);
 			$requestUri->setValue($request, $guessedParentUri);
 
@@ -261,13 +261,21 @@ class RouteHelper
 				if ($route instanceof Route) {
 					return self::$parentRouteCache[$child->getUri()] = $route;
 				}
-			} catch (Exception $e) {}
+			} catch (Exception $e) {
+                if ($guessedParentUri == '/') {
+                    break;
+                }
+            }
 
 			// cut off another slash part (e.g. /users/{userid}/friends -> /users/{userid})
 			$guessedParentUri = substr($guessedParentUri, 0, strripos($guessedParentUri, '/'));
+
+            if ($guessedParentUri == '') {
+                $guessedParentUri = '/';
+            }
 		}
 
-		return $child; // return the same route if no parent exists
+		return self::$parentRouteCache[$child->getUri()] = $child; // return the same route if no parent exists
 	}
 
 	/**

@@ -52,7 +52,12 @@ class HalApiElement implements HalApiContract
 		$this->self($self)->parent($parent);
 	}
 
-	public static function make(HalLink $self = null, HalLink $parent = null)
+    /**
+     * @param HalLink $self
+     * @param HalLink $parent
+     * @return HalApiElement
+     */
+    public static function make(HalLink $self = null, HalLink $parent = null)
 	{
 		return new static($self, $parent);
 	}

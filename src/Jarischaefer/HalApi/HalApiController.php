@@ -41,12 +41,18 @@ abstract class HalApiController extends Controller
 		$this->parent = HalLink::make(RouteHelper::parent(\Route::current()), $routeParameters);
 	}
 
-	public static function make()
+    /**
+     * @return static
+     */
+    public static function make()
 	{
 		return new static;
 	}
 
-	protected function createResponse()
+    /**
+     * @return HalApiElement
+     */
+    protected function createResponse()
 	{
 		return HalApiElement::make($this->self, $this->parent);
 	}

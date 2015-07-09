@@ -38,22 +38,20 @@ abstract class HalApiResourceController extends HalApiController
 	 * Default number of items per pagination page. Used as a fallback if the value
 	 * provided via configuration is invalid.
 	 */
-	const PAGINATION_DEFAULT_ITEMS_PER_PAGE = 5;
+	const PAGINATION_DEFAULT_ITEMS_PER_PAGE = 10;
 
 	/**
 	 * @var int
 	 */
 	private $defaultPerPage;
 	/**
-	 * Should be initialized in the boot() method of the child class.
-	 * Provides an instance of the underlying model's transformer class.
+	 * The model's transformer.
 	 *
 	 * @var HalApiTransformer
 	 */
 	protected $transformer;
 	/**
-	 * Should be initialized in the boot() method of the child class.
-	 * Provides the full path to the underlying model class (e.g. App\Job).
+	 * The model's namespace + class name (e.g. App\Job::class).
 	 *
 	 * @var string
 	 */
@@ -214,7 +212,7 @@ abstract class HalApiResourceController extends HalApiController
 			$response->link('prev', HalLink::make($route, $routeParameters, 'current_page=' . ($paginator->currentPage() - 1), true));
 		}
 
-		if ($paginator->currentPage() < $paginator->lastItem()) {
+		if ($paginator->currentPage() < $paginator->lastPage()) {
 			$response->link('next', HalLink::make($route, $routeParameters, 'current_page=' . ($paginator->currentPage() + 1), true));
 		}
 
@@ -283,7 +281,7 @@ abstract class HalApiResourceController extends HalApiController
 			throw new DatabaseSaveException('Model could not be created.', 0, $e);
 		}
 
-		return \Response::make($this->show($model), Response::HTTP_CREATED);
+		return response($this->show($model), Response::HTTP_CREATED);
 	}
 
 	/**
@@ -330,7 +328,7 @@ abstract class HalApiResourceController extends HalApiController
 					throw new DatabaseSaveException('Model could not be saved.', 0, $e);
 				}
 
-				return $existed ? $this->show($model) : \Response::make($this->show($model), Response::HTTP_CREATED);
+				return $existed ? $this->show($model) : response($this->show($model), Response::HTTP_CREATED);
 			case Request::METHOD_PATCH:
 				try {
 					$model->update($this->body->getArray());
@@ -341,7 +339,7 @@ abstract class HalApiResourceController extends HalApiController
 
 				return $this->show($model);
 			default:
-				return \Response::make('', Response::HTTP_METHOD_NOT_ALLOWED);
+				return response('', Response::HTTP_METHOD_NOT_ALLOWED);
 		}
 	}
 

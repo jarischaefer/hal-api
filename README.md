@@ -197,6 +197,7 @@ class HomeController extends HalApiController
 	}
 
 }
+```
 
 ### HAL Resource Controller
 

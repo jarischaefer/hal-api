@@ -205,6 +205,7 @@ A resource controller consists of three components: **Controller**, **Transforme
 The model holds data, typically a table row. This data can be transformed to a HAL response using a transformer.
 Finally, the controller handles all requests for a given resource and utilizes models and transformers to form its responses.
 
+```php
 class UsersController extends HalApiResourceController
 {
 

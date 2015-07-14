@@ -1,7 +1,7 @@
 <?php namespace Jarischaefer\HalApi;
 
 use App;
-use Illuminate\Foundation\Bus\DispatchesCommands;
+use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller;
 use Input;
@@ -16,7 +16,7 @@ use RuntimeException;
 abstract class HalApiController extends Controller
 {
 
-	use DispatchesCommands, ValidatesRequests;
+	use DispatchesJobs, ValidatesRequests;
 
 	/**
 	 * @var SafeIndexArray
@@ -41,18 +41,18 @@ abstract class HalApiController extends Controller
 		$this->parent = HalLink::make(RouteHelper::parent(\Route::current()), $routeParameters);
 	}
 
-    /**
-     * @return static
-     */
-    public static function make()
+	/**
+	 * @return static
+	 */
+	public static function make()
 	{
 		return new static;
 	}
 
-    /**
-     * @return HalApiElement
-     */
-    protected function createResponse()
+	/**
+	 * @return HalApiElement
+	 */
+	protected function createResponse()
 	{
 		return HalApiElement::make($this->self, $this->parent);
 	}

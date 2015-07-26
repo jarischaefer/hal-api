@@ -70,6 +70,23 @@ class ResourceRoute
 		$this->controller = (string)$controller;
 		$this->routeHelper = $routeHelper;
 		$this->methods = is_array($methods) ? $methods : [$methods];
+
+		if (in_array(self::INDEX, $this->methods)) {
+			$this->routeHelper->get($this->name, $this->controller, self::INDEX);
+		}
+		if (in_array(self::SHOW, $this->methods)) {
+			$this->routeHelper->get($this->name . '/{' . $this->name . '}', $this->controller, self::SHOW);
+		}
+		if (in_array(self::STORE, $this->methods)) {
+			$this->routeHelper->post($this->name, $this->controller, self::STORE);
+		}
+		if (in_array(self::UPDATE, $this->methods)) {
+			$this->routeHelper->put($this->name . '/{' . $this->name . '}', $this->controller, self::UPDATE);
+			$this->routeHelper->patch($this->name . '/{' . $this->name . '}', $this->controller, self::UPDATE);
+		}
+		if (in_array(self::DESTROY, $this->methods)) {
+			$this->routeHelper->delete($this->name . '/{' . $this->name . '}', $this->controller, self::DESTROY);
+		}
 	}
 
 	/**
@@ -254,23 +271,6 @@ class ResourceRoute
 	 */
 	public function done()
 	{
-		if (in_array(self::INDEX, $this->methods)) {
-			$this->routeHelper->get($this->name, $this->controller, self::INDEX);
-		}
-		if (in_array(self::SHOW, $this->methods)) {
-			$this->routeHelper->get($this->name . '/{' . $this->name . '}', $this->controller, self::SHOW);
-		}
-		if (in_array(self::STORE, $this->methods)) {
-			$this->routeHelper->post($this->name, $this->controller, self::STORE);
-		}
-		if (in_array(self::UPDATE, $this->methods)) {
-			$this->routeHelper->put($this->name . '/{' . $this->name . '}', $this->controller, self::UPDATE);
-			$this->routeHelper->patch($this->name . '/{' . $this->name . '}', $this->controller, self::UPDATE);
-		}
-		if (in_array(self::DESTROY, $this->methods)) {
-			$this->routeHelper->delete($this->name . '/{' . $this->name . '}', $this->controller, self::DESTROY);
-		}
-
 		return $this->routeHelper;
 	}
 

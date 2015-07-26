@@ -36,6 +36,10 @@ abstract class HalApiController extends Controller
 		$this->parameters = new SafeIndexArray(Input::all());
 		$this->body = new SafeIndexArray(Input::json()->all());
 
+		if (App::runningInConsole()) {
+			return;
+		}
+
 		$routeParameters = \Route::current() ? \Route::current()->parameters() : [];
 		$this->self = HalLink::make(\Route::current(), $routeParameters, \Route::getCurrentRequest()->getQueryString());
 		$this->parent = HalLink::make(RouteHelper::parent(\Route::current()), $routeParameters);

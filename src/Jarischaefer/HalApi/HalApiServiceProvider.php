@@ -1,24 +1,28 @@
 <?php namespace Jarischaefer\HalApi;
 
+use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
+use Jarischaefer\HalApi\Caching\CacheFactory;
+use Jarischaefer\HalApi\Caching\CacheFactoryImpl;
+use Jarischaefer\HalApi\Caching\HalApiCacheContract;
+use Jarischaefer\HalApi\Caching\HalApiCacheSimple;
+use Jarischaefer\HalApi\Caching\HalApiCachingMiddleware;
+use Jarischaefer\HalApi\Caching\HalApiETagMiddleware;
 
-class HalApiServiceProvider extends ServiceProvider {
+class HalApiServiceProvider extends ServiceProvider
+{
 
 	/**
 	 * Indicates if loading of the provider is deferred.
 	 *
 	 * @var bool
 	 */
-	protected $defer = false;
+	protected $defer = true;
 
-	/**
-	 * Bootstrap the application events.
-	 *
-	 * @return void
-	 */
-	public function boot()
+	public function boot(Router $router)
 	{
-
+		$router->middleware('hal-api.etag', HalApiETagMiddleware::class);
+		$router->middleware('hal-api.cache', HalApiCachingMiddleware::class);
 	}
 
 	/**
@@ -28,12 +32,9 @@ class HalApiServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-		$this->app->bind('hal-api', function()
-		{
-			return new HalApiElement;
-		});
-
 		$this->app->bind(HalApiContract::class, HalApiElement::class);
+		$this->app->bind(CacheFactory::class, CacheFactoryImpl::class);
+		$this->app->bind(HalApiCacheContract::class, HalApiCacheSimple::class);
 	}
 
 	/**
@@ -43,9 +44,7 @@ class HalApiServiceProvider extends ServiceProvider {
 	 */
 	public function provides()
 	{
-		return [
-			'hal-api'
-		];
+		return [];
 	}
 
 }

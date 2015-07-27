@@ -1,10 +1,14 @@
 <?php namespace Jarischaefer\HalApi;
 
 use App;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Cache;
 use Input;
+use Jarischaefer\HalApi\Caching\CacheFactory;
+use Jarischaefer\HalApi\Caching\HalApiCacheContract;
 use Jarischaefer\HalApi\Exceptions\NotImplementedException;
 use Jarischaefer\HalApi\Routing\RouteHelper;
 use RuntimeException;
@@ -19,6 +23,15 @@ abstract class HalApiController extends Controller
 	use DispatchesJobs, ValidatesRequests;
 
 	/**
+	 * Global prefix for the managed cache.
+	 */
+	const CACHE_GLOBAL_PREFIX = HalApiResourceController::class . '_cache';
+	/**
+	 * The TTL for managed cache entries.
+	 */
+	const CACHE_MINUTES = 60;
+
+	/**
 	 * @var SafeIndexArray
 	 */
 	protected $parameters;
@@ -26,17 +39,24 @@ abstract class HalApiController extends Controller
 	 * @var SafeIndexArray
 	 */
 	protected $body;
-
+	/**
+	 * @var HalLink
+	 */
 	protected $self;
-
+	/**
+	 * @var HalLink
+	 */
 	protected $parent;
 
+	/**
+	 *
+	 */
 	public function __construct()
 	{
 		$this->parameters = new SafeIndexArray(Input::all());
 		$this->body = new SafeIndexArray(Input::json()->all());
 
-		if (App::runningInConsole()) {
+		if (App::runningInConsole() && !App::runningUnitTests()) {
 			return;
 		}
 
@@ -46,11 +66,33 @@ abstract class HalApiController extends Controller
 	}
 
 	/**
-	 * @return static
+	 * @param array $parameters
+	 * @return HalApiController
 	 */
-	public static function make()
+	public static function make(array $parameters = [])
 	{
-		return new static;
+		return App::make(static::class, $parameters);
+	}
+
+	/**
+	 * @return HalApiCacheContract
+	 */
+	public static function getCache()
+	{
+		/** @var CacheFactory $cacheFactory */
+		$cacheFactory = App::make(CacheFactory::class);
+		$repository = App::make(Repository::class);
+		$cacheKey = self::CACHE_GLOBAL_PREFIX . '_' . static::class;
+
+		return $cacheFactory->create($repository, $cacheKey, self::CACHE_MINUTES);
+	}
+
+	/**
+	 * @return HalApiCacheContract[]
+	 */
+	public static function getRelatedCaches()
+	{
+		return [];
 	}
 
 	/**

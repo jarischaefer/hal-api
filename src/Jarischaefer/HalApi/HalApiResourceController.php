@@ -1,15 +1,21 @@
 <?php namespace Jarischaefer\HalApi;
 
+use App;
 use Config;
 use Exception;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Input;
+use Jarischaefer\HalApi\Caching\CacheFactory;
+use Jarischaefer\HalApi\Caching\HalApiCacheContract;
+use Jarischaefer\HalApi\Caching\HalApiCacheSimple;
 use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
 use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
 use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
 use Jarischaefer\HalApi\Routing\RouteHelper;
+use RuntimeException;
 use Schema;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,11 +35,11 @@ abstract class HalApiResourceController extends HalApiController
 	/**
 	 * Query parameter name used for pagination's current page.
 	 */
-	const PAGINATION_CURRENT_PAGE = 'current_page';
+	const PAGINATION_URI_PAGE = 'page';
 	/**
 	 * Query parameter name used for pagination's item count per page.
 	 */
-	const PAGINATION_PER_PAGE = 'per_page';
+	const PAGINATION_URI_PER_PAGE = 'per_page';
 	/**
 	 * Default number of items per pagination page. Used as a fallback if the value
 	 * provided via configuration is invalid.
@@ -59,13 +65,13 @@ abstract class HalApiResourceController extends HalApiController
 	/**
 	 * Holds the current page for pagination purposes.
 	 *
-	 * @var
+	 * @var int
 	 */
-	protected $currentPage;
+	protected $page;
 	/**
 	 * Holds the number of entries per page for pagination purposes.
 	 *
-	 * @var
+	 * @var int
 	 */
 	protected $perPage;
 
@@ -83,12 +89,23 @@ abstract class HalApiResourceController extends HalApiController
 	 */
 	abstract protected function getModel();
 
-	public final function __construct()
+	/**
+	 *
+	 */
+	public function __construct()
 	{
 		parent::__construct();
 
 		$this->transformer = $this->getTransformer();
-		$this->model = $this->getModel();
+		$this->model = (string)$this->getModel();
+
+		if (!is_subclass_of($this->transformer, HalApiTransformer::class)) {
+			throw new RuntimeException('Transformer must be child of ' . HalApiTransformer::class);
+		}
+
+		if (!is_subclass_of($this->model, Model::class)) {
+			throw new RuntimeException('Model must be child of ' . Model::class);
+		}
 
 		$this->defaultPerPage = (int)Config::get(self::CONFIG_PAGINATION_DEFAULT_PER_PAGE);
 
@@ -97,26 +114,27 @@ abstract class HalApiResourceController extends HalApiController
 		}
 
 		$this->preparePagination();
-		$this->boot();
 	}
 
 	/**
-	 * Children may override this method.
+	 * @param array $parameters
+	 * @return HalApiResourceController
 	 */
-	protected function boot()
+	public static function make(array $parameters = [])
 	{
+		return parent::make($parameters);
 	}
 
 	/**
-	 * Initializes currentPage and perPage variables based on user input.
+	 * Initializes page and perPage variables based on user input.
 	 */
 	private function preparePagination()
 	{
-		$this->currentPage = (int)Input::get(self::PAGINATION_CURRENT_PAGE, 1);
-		$this->perPage = (int)Input::get(self::PAGINATION_PER_PAGE, $this->defaultPerPage);
+		$this->page = (int)Input::get(self::PAGINATION_URI_PAGE, 1);
+		$this->perPage = (int)Input::get(self::PAGINATION_URI_PER_PAGE, $this->defaultPerPage);
 
-		if (!is_numeric($this->currentPage)) {
-			$this->currentPage = 1;
+		if (!is_numeric($this->page)) {
+			$this->page = 1;
 		}
 
 		if (!is_numeric($this->perPage)) {
@@ -199,24 +217,24 @@ abstract class HalApiResourceController extends HalApiController
 		]);
 
 		$response->meta('pagination', [
-			'total' => $paginator->total(),
-			'count' => $paginator->count(),
+			'page' => $paginator->currentPage(),
 			'per_page' => $paginator->perPage(),
-			'current_page' => $paginator->currentPage(),
+			'count' => $paginator->count(),
+			'total' => $paginator->total(),
 			'pages' => $paginator->lastPage(),
 		]);
 
-		$response->link('first', HalLink::make($route, $routeParameters, 'current_page=1', true));
+		$response->link('first', HalLink::make($route, $routeParameters, self::PAGINATION_URI_PAGE . '=1', true));
 
 		if ($paginator->currentPage() > 1) {
-			$response->link('prev', HalLink::make($route, $routeParameters, 'current_page=' . ($paginator->currentPage() - 1), true));
+			$response->link('prev', HalLink::make($route, $routeParameters, self::PAGINATION_URI_PAGE . '=' . ($paginator->currentPage() - 1), true));
 		}
 
 		if ($paginator->currentPage() < $paginator->lastPage()) {
-			$response->link('next', HalLink::make($route, $routeParameters, 'current_page=' . ($paginator->currentPage() + 1), true));
+			$response->link('next', HalLink::make($route, $routeParameters, self::PAGINATION_URI_PAGE . '=' . ($paginator->currentPage() + 1), true));
 		}
 
-		$response->link('last', HalLink::make($route, $routeParameters, 'current_page=' . $paginator->lastPage(), true));
+		$response->link('last', HalLink::make($route, $routeParameters, self::PAGINATION_URI_PAGE . '=' . $paginator->lastPage(), true));
 
 		return $response;
 	}
@@ -245,6 +263,7 @@ abstract class HalApiResourceController extends HalApiController
 	 */
 	public function show($model)
 	{
+		/** @var Model $model */
 		return $this->transformer->item($model)->build();
 	}
 
@@ -354,7 +373,7 @@ abstract class HalApiResourceController extends HalApiController
 			/* @var Model $model */
 			$model->delete();
 		} catch (Exception $e) {
-			throw new DatabaseConflictException('Model could not be deleted: ' . $model->{$model->getKeyName()});
+			throw new DatabaseConflictException('Model could not be deleted: ' . $model->getKey());
 		}
 
 		return response('', Response::HTTP_NO_CONTENT);

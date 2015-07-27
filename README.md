@@ -2,9 +2,13 @@
 
 ## About
 
-The HAL-API is based on Laravel 5 (development). It is designed to automate common tasks in RESTful API programming.
+This package is based on Laravel 5. It is designed to automate common tasks in RESTful API programming.
 
 ## Installation
+
+### Requirements
+
+Requires Laravel 5.1 and PHP 5.6+.
 
 ### Composer
 
@@ -26,7 +30,9 @@ This is going to install the development version.
 Register the Service Provider in your config/app.php file.
 ```php
 'providers' => [
-	'Jarischaefer\HalApi\HalApiServiceProvider',
+
+	Jarischaefer\HalApi\HalApiServiceProvider::class,
+
 ]
 ```
 

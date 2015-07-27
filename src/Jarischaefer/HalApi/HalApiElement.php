@@ -47,7 +47,7 @@ class HalApiElement implements HalApiContract
 	 */
 	private $autoSubordinateRoutes = true;
 
-	public function __construct(HalLink $self = null, HalLink $parent = null)
+	public function __construct(HalLink $self, HalLink $parent)
 	{
 		$this->self($self)->parent($parent);
 	}
@@ -57,7 +57,7 @@ class HalApiElement implements HalApiContract
 	 * @param HalLink $parent
 	 * @return HalApiElement
 	 */
-	public static function make(HalLink $self = null, HalLink $parent = null)
+	public static function make(HalLink $self, HalLink $parent)
 	{
 		return new static($self, $parent);
 	}

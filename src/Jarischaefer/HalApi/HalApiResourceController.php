@@ -3,13 +3,9 @@
 use App;
 use Config;
 use Exception;
-use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Input;
-use Jarischaefer\HalApi\Caching\CacheFactory;
-use Jarischaefer\HalApi\Caching\HalApiCacheContract;
-use Jarischaefer\HalApi\Caching\HalApiCacheSimple;
 use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
 use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;

@@ -1,25 +1,32 @@
-<?php namespace Jarischaefer\HalApi;
+<?php namespace Jarischaefer\HalApi\Controllers;
 
 use App;
 use Config;
 use Exception;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Input;
 use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
 use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
 use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
-use Jarischaefer\HalApi\Routing\RouteHelper;
+use Jarischaefer\HalApi\Representations\HalApiRepresentation;
+use Jarischaefer\HalApi\Representations\RepresentationFactory;
+use Jarischaefer\HalApi\Helpers\RouteHelper;
+use Jarischaefer\HalApi\Routing\LinkFactory;
+use Jarischaefer\HalApi\Transformers\HalApiTransformer;
+use Jarischaefer\HalApi\Transformers\TransformerFactory;
 use RuntimeException;
 use Schema;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Class HalApiResourceController
- * @package Jarischaefer\hal-api
+ * @package Jarischaefer\HalApi\Controllers
  */
 abstract class HalApiResourceController extends HalApiController
 {
@@ -46,6 +53,10 @@ abstract class HalApiResourceController extends HalApiController
 	 * @var int
 	 */
 	private $defaultPerPage;
+	/**
+	 * @var TransformerFactory
+	 */
+	protected $transformerFactory;
 	/**
 	 * The model's transformer.
 	 *
@@ -86,11 +97,24 @@ abstract class HalApiResourceController extends HalApiController
 	abstract protected function getModel();
 
 	/**
-	 *
+	 * @param Application $application
+	 * @param Request $request
+	 * @param LinkFactory $linkFactory
+	 * @param RepresentationFactory $representationFactory
+	 * @param RouteHelper $routeHelper
+	 * @param TransformerFactory $transformerFactory
+	 * @param ResponseFactory $responseFactory
 	 */
-	public function __construct()
+	public function __construct(Application $application, Request $request, LinkFactory $linkFactory, RepresentationFactory $representationFactory, RouteHelper $routeHelper, TransformerFactory $transformerFactory, ResponseFactory $responseFactory)
 	{
-		parent::__construct();
+		parent::__construct($application, $request, $linkFactory, $representationFactory, $routeHelper, $responseFactory);
+
+		$this->transformerFactory = $transformerFactory;
+		$this->boot();
+
+		if (App::runningInConsole() && !App::runningUnitTests()) {
+			return;
+		}
 
 		$this->transformer = $this->getTransformer();
 		$this->model = (string)$this->getModel();
@@ -110,32 +134,6 @@ abstract class HalApiResourceController extends HalApiController
 		}
 
 		$this->preparePagination();
-	}
-
-	/**
-	 * @param array $parameters
-	 * @return HalApiResourceController
-	 */
-	public static function make(array $parameters = [])
-	{
-		return parent::make($parameters);
-	}
-
-	/**
-	 * Initializes page and perPage variables based on user input.
-	 */
-	private function preparePagination()
-	{
-		$this->page = (int)Input::get(self::PAGINATION_URI_PAGE, 1);
-		$this->perPage = (int)Input::get(self::PAGINATION_URI_PER_PAGE, $this->defaultPerPage);
-
-		if (!is_numeric($this->page)) {
-			$this->page = 1;
-		}
-
-		if (!is_numeric($this->perPage)) {
-			$this->perPage = $this->defaultPerPage;
-		}
 	}
 
 	/**
@@ -193,44 +191,70 @@ abstract class HalApiResourceController extends HalApiController
 	}
 
 	/**
+	 * Initializes page and perPage variables based on user input.
+	 */
+	private function preparePagination()
+	{
+		$this->page = (int)Input::get(self::PAGINATION_URI_PAGE, 1);
+		$this->perPage = (int)Input::get(self::PAGINATION_URI_PER_PAGE, $this->defaultPerPage);
+
+		if (!is_numeric($this->page)) {
+			$this->page = 1;
+		}
+
+		if (!is_numeric($this->perPage)) {
+			$this->perPage = $this->defaultPerPage;
+		}
+	}
+
+	/**
+	 * Executed as an early step in the constructor.
+	 * Helps if one does not wish to override the constructor and consequently inherit all its default parameters.
+	 */
+	protected function boot()
+	{
+		// do not put anything here, children should not call this method
+	}
+
+	/**
 	 * Embeds data from a paginator instance inside the API response. Pagination metadata indicating number of pages,
 	 * totals, ... will be automatically added as well. Furthermore, links to the first, next, previous and last
 	 * pages will be added if applicable.
 	 *
 	 * @param LengthAwarePaginator $paginator
-	 * @return HalApiContract
+	 * @return HalApiRepresentation
 	 * @throws Exception
 	 */
 	protected function paginate(LengthAwarePaginator $paginator)
 	{
-		$route = \Route::current();
-		$routeParameters = \Route::current()->parameters();
-		$self = HalLink::make($route, $routeParameters, null, true);
-		$parent = HalLink::make(RouteHelper::parent($route), $routeParameters);
-		$response = new HalApiElement($self, $parent);
-		$response->embedFromArray([
-			static::getRelation(RouteHelper::SHOW) => $this->transformer->collection($paginator->items()),
-		]);
+		$route = $this->self->getRoute();
+		$routeParameters = $this->self->getParameters();
+		$queryString = self::PAGINATION_URI_PER_PAGE . '=' . $this->perPage . '&' . self::PAGINATION_URI_PAGE . '=';
 
-		$response->meta('pagination', [
-			'page' => $paginator->currentPage(),
-			'per_page' => $paginator->perPage(),
-			'count' => $paginator->count(),
-			'total' => $paginator->total(),
-			'pages' => $paginator->lastPage(),
-		]);
-
-		$response->link('first', HalLink::make($route, $routeParameters, self::PAGINATION_URI_PAGE . '=1', true));
+		$response = $this->representationFactory->create($this->self, $this->parent)
+			->embedFromArray([
+				static::getRelation(RouteHelper::SHOW) => $this->transformer->collection($paginator->items()),
+			])
+			->meta('pagination', [
+				'page' => $paginator->currentPage(),
+				'per_page' => $paginator->perPage(),
+				'count' => $paginator->count(),
+				'total' => $paginator->total(),
+				'pages' => $paginator->lastPage() ?: 1,
+			])
+			->link('first', $this->linkFactory->create($route, $routeParameters, $queryString . '1'));
 
 		if ($paginator->currentPage() > 1) {
-			$response->link('prev', HalLink::make($route, $routeParameters, self::PAGINATION_URI_PAGE . '=' . ($paginator->currentPage() - 1), true));
+			$prev = $this->linkFactory->create($route, $routeParameters, $queryString . ($paginator->currentPage() - 1));
+			$response->link('prev', $prev);
 		}
 
 		if ($paginator->currentPage() < $paginator->lastPage()) {
-			$response->link('next', HalLink::make($route, $routeParameters, self::PAGINATION_URI_PAGE . '=' . ($paginator->currentPage() + 1), true));
+			$next = $this->linkFactory->create($route, $routeParameters, $queryString . ($paginator->currentPage() + 1));
+			$response->link('next', $next);
 		}
 
-		$response->link('last', HalLink::make($route, $routeParameters, self::PAGINATION_URI_PAGE . '=' . $paginator->lastPage(), true));
+		$response->link('last', $this->linkFactory->create($route, $routeParameters, $queryString . ($paginator->lastPage() ?: 1)));
 
 		return $response;
 	}
@@ -239,7 +263,7 @@ abstract class HalApiResourceController extends HalApiController
 	 * Returns a paginated API response containing n models where n equals either the default number of models per page
 	 * or the number specified by the user. The models are embedded into the response.
 	 *
-	 * @return array
+	 * @return Response
 	 * @throws Exception
 	 */
 	public function index()
@@ -248,19 +272,19 @@ abstract class HalApiResourceController extends HalApiController
 		$model = $this->model;
 		$paginator = $model::paginate($this->perPage);
 
-		return $this->paginate($paginator)->build();
+		return $this->responseFactory->json($this->paginate($paginator)->build());
 	}
 
 	/**
 	 * Returns an API response containing the data of the specified model.
 	 *
 	 * @param $model
-	 * @return array
+	 * @return Response
 	 */
 	public function show($model)
 	{
 		/** @var Model $model */
-		return $this->transformer->item($model)->build();
+		return $this->responseFactory->json($this->transformer->item($model)->build());
 	}
 
 	/**
@@ -296,7 +320,7 @@ abstract class HalApiResourceController extends HalApiController
 			throw new DatabaseSaveException('Model could not be created.', 0, $e);
 		}
 
-		return response($this->show($model), Response::HTTP_CREATED);
+		return $this->show($model)->setStatusCode(Response::HTTP_CREATED);
 	}
 
 	/**
@@ -315,7 +339,7 @@ abstract class HalApiResourceController extends HalApiController
 			$model = new $this->model;
 		}
 
-		switch (\Request::getMethod()) {
+		switch ($this->request->getMethod()) {
 			case Request::METHOD_PUT:
 				$existed = $model->exists;
 				$keys = array_keys($this->body->getArray());
@@ -343,7 +367,7 @@ abstract class HalApiResourceController extends HalApiController
 					throw new DatabaseSaveException('Model could not be saved.', 0, $e);
 				}
 
-				return $existed ? $this->show($model) : response($this->show($model), Response::HTTP_CREATED);
+				return $existed ? $this->show($model) : $this->show($model)->setStatusCode(Response::HTTP_CREATED);
 			case Request::METHOD_PATCH:
 				try {
 					$model->update($this->body->getArray());
@@ -354,7 +378,7 @@ abstract class HalApiResourceController extends HalApiController
 
 				return $this->show($model);
 			default:
-				return response('', Response::HTTP_METHOD_NOT_ALLOWED);
+				return $this->responseFactory->json('', Response::HTTP_METHOD_NOT_ALLOWED);
 		}
 	}
 
@@ -372,7 +396,7 @@ abstract class HalApiResourceController extends HalApiController
 			throw new DatabaseConflictException('Model could not be deleted: ' . $model->getKey());
 		}
 
-		return response('', Response::HTTP_NO_CONTENT);
+		return $this->responseFactory->json('', Response::HTTP_NO_CONTENT);
 	}
 
 }

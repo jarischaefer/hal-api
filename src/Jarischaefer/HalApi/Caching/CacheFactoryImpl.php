@@ -2,15 +2,19 @@
 
 use Illuminate\Contracts\Cache\Repository;
 
+/**
+ * Class CacheFactoryImpl
+ * @package Jarischaefer\HalApi\Caching
+ */
 class CacheFactoryImpl implements CacheFactory
 {
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function create(Repository $repository, $cacheKey, $cacheMinutes)
 	{
-		return new HalApiCacheSimple($repository, $cacheKey, $cacheMinutes);
+		return new HalApiCache($repository, $cacheKey, $cacheMinutes);
 	}
 
 }

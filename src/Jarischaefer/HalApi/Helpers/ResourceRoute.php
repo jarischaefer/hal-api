@@ -1,8 +1,8 @@
-<?php namespace Jarischaefer\HalApi\Routing;
+<?php namespace Jarischaefer\HalApi\Helpers;
 
 /**
  * Class ResourceRoute
- * @package Jarischaefer\HalApi\Routing
+ * @package Jarischaefer\HalApi\Helpers
  */
 class ResourceRoute
 {

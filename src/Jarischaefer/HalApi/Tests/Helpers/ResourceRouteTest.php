@@ -1,10 +1,11 @@
-<?php
+<?php namespace Jarischaefer\HalApi\Tests\Helpers;
 
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\RouteCollection;
 use Illuminate\Routing\Router;
-use Jarischaefer\HalApi\Routing\RouteHelper;
+use Jarischaefer\HalApi\Helpers\RouteHelper;
+use Jarischaefer\HalApi\Tests\TestCase;
 
 class ResourceRouteTest extends TestCase
 {

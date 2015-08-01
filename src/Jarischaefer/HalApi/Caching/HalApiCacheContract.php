@@ -59,7 +59,7 @@ interface HalApiCacheContract
 
 	/**
 	 * @param string ...$fragments
-	 * @return mixed
+	 * @return string
 	 */
 	public function key(...$fragments);
 

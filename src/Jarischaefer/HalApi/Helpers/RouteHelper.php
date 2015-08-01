@@ -1,16 +1,18 @@
-<?php namespace Jarischaefer\HalApi\Routing;
+<?php namespace Jarischaefer\HalApi\Helpers;
 
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
+use Jarischaefer\HalApi\Controllers\HalApiController;
 use ReflectionClass;
+use RuntimeException;
 
 /**
  * Provides an easier, more RESTful approach of registering routes.
  *
  * Class RouteHelper
- * @package Jarischaefer\HalApi\Routing
+ * @package Jarischaefer\HalApi\Helpers
  */
 class RouteHelper
 {
@@ -46,19 +48,19 @@ class RouteHelper
 	 *
 	 * @var array
 	 */
-	private static $byActionRouteCache = [];
+	private $byActionRouteCache = [];
 	/**
 	 * Holds parent routes.
 	 *
 	 * @var array
 	 */
-	private static $parentRouteCache = [];
+	private $parentRouteCache = [];
 	/**
 	 * Holds child routes.
 	 *
 	 * @var array
 	 */
-	private static $subordinateRouteCache = [];
+	private $subordinateRouteCache = [];
 	/**
 	 * The router where routes shall be registered.
 	 *
@@ -101,8 +103,6 @@ class RouteHelper
 	 */
 	public function resource($name, $controller, $methods = [self::INDEX, self::SHOW, self::STORE, self::UPDATE, self::DESTROY])
 	{
-		$controller = class_basename($controller);
-
 		return ResourceRoute::make($name, $controller, $this, $methods);
 	}
 
@@ -116,7 +116,6 @@ class RouteHelper
 	 */
 	public function get($uri, $controller, $method)
 	{
-		$controller = class_basename($controller);
 		$this->router->get($uri, $controller . '@' . $method);
 
 		return $this;
@@ -132,7 +131,6 @@ class RouteHelper
 	 */
 	public function post($uri, $controller, $method)
 	{
-		$controller = class_basename($controller);
 		$this->router->post($uri, $controller . '@' . $method);
 
 		return $this;
@@ -148,7 +146,6 @@ class RouteHelper
 	 */
 	public function put($uri, $controller, $method)
 	{
-		$controller = class_basename($controller);
 		$this->router->put($uri, $controller . '@' . $method);
 
 		return $this;
@@ -164,7 +161,6 @@ class RouteHelper
 	 */
 	public function patch($uri, $controller, $method)
 	{
-		$controller = class_basename($controller);
 		$this->router->patch($uri, $controller . '@' . $method);
 
 		return $this;
@@ -180,7 +176,6 @@ class RouteHelper
 	 */
 	public function delete($uri, $controller, $method)
 	{
-		$controller = class_basename($controller);
 		$this->router->delete($uri, $controller . '@' . $method);
 
 		return $this;
@@ -197,7 +192,6 @@ class RouteHelper
 	 */
 	public function pagination($uri, $controller, $method)
 	{
-		$controller = class_basename($controller);
 		$paginatedUri = $uri . (stripos($uri, '?') ? '&' : '?') . self::PAGINATION_URI;
 		$this->router->get($paginatedUri, $controller . '@' . $method);
 
@@ -209,21 +203,20 @@ class RouteHelper
 	 *
 	 * @param string $actionName The action name (e.g. App\Http\Controllers\UsersController@delete).
 	 * @return Route
-	 * @throws Exception
 	 */
-	public static function byAction($actionName)
+	public function byAction($actionName)
 	{
-		if (array_key_exists($actionName, self::$byActionRouteCache)) {
-			return self::$byActionRouteCache[$actionName];
+		if (array_key_exists($actionName, $this->byActionRouteCache)) {
+			return $this->byActionRouteCache[$actionName];
 		}
 
-		$route = \Route::getRoutes()->getByAction($actionName);
+		$route = $this->router->getRoutes()->getByAction($actionName);
 
-		if (!($route instanceof Route)) {
-			throw new Exception('Could not find route for action: ' . $actionName);
+		if ($route instanceof Route) {
+			return $this->byActionRouteCache[$actionName] = $route;
 		}
 
-		return self::$byActionRouteCache[$actionName] = $route;
+		throw new RuntimeException('Could not find route for action: ' . $actionName);
 	}
 
 	/**
@@ -234,12 +227,12 @@ class RouteHelper
 	 * @param Route $child
 	 * @return Route
 	 */
-	public static function parent(Route $child)
+	public function parent(Route $child)
 	{
 		// TODO reflection mess
 
-		if (array_key_exists($child->getUri(), self::$parentRouteCache)) {
-			return self::$parentRouteCache[$child->getUri()];
+		if (array_key_exists($child->getUri(), $this->parentRouteCache)) {
+			return $this->parentRouteCache[$child->getUri()];
 		}
 
 		$lastSlash = strripos($child->getUri(), '/');
@@ -256,10 +249,10 @@ class RouteHelper
 			$requestUri->setValue($request, $guessedParentUri);
 
 			try {
-				$route = \Route::getRoutes()->match($request);
+				$route = $this->router->getRoutes()->match($request);
 
 				if ($route instanceof Route) {
-					return self::$parentRouteCache[$child->getUri()] = $route;
+					return $this->parentRouteCache[$child->getUri()] = $route;
 				}
 			} catch (Exception $e) {
                 if ($guessedParentUri == '/') {
@@ -275,7 +268,7 @@ class RouteHelper
             }
 		}
 
-		return self::$parentRouteCache[$child->getUri()] = $child; // return the same route if no parent exists
+		return $this->parentRouteCache[$child->getUri()] = $child; // return the same route if no parent exists
 	}
 
 	/**
@@ -283,19 +276,23 @@ class RouteHelper
 	 * like /users/{userid}, /users/new.
 	 *
 	 * @param Route $parentRoute
-	 * @return array
+	 * @return \Illuminate\Routing\Route[]
 	 */
-	public static function subordinates(Route $parentRoute)
+	public function subordinates(Route $parentRoute)
 	{
-		if (array_key_exists($parentRoute->getUri(), self::$subordinateRouteCache)) {
-			return self::$subordinateRouteCache[$parentRoute->getUri()];
+		if (array_key_exists($parentRoute->getUri(), $this->subordinateRouteCache)) {
+			return $this->subordinateRouteCache[$parentRoute->getUri()];
 		}
 
-		$routes = \Route::getRoutes();
+		$routes = $this->router->getRoutes();
 		$children = [];
 
 		/* @var Route $route */
 		foreach ($routes as $route) {
+			if (!RouteHelper::isValid($route)) {
+				continue;
+			}
+
 			// if the route does not start with the same uri as the current route -> skip
 			if ($parentRoute->getUri() != '/' && !starts_with($route->getUri(), $parentRoute->getUri())) {
 				continue;
@@ -309,7 +306,32 @@ class RouteHelper
 			$children[] = $route;
 		}
 
-		return self::$subordinateRouteCache[$parentRoute->getUri()] = $children;
+		return $this->subordinateRouteCache[$parentRoute->getUri()] = $children;
+	}
+
+	/**
+	 * Checks if a route is bound to an implementation of {@see HalApiController}
+	 *
+	 * @param Route $route
+	 * @return bool
+	 */
+	public static function isValid(Route $route)
+	{
+		$actionName = $route->getActionName();
+
+		// valid routes are backed by a controller (e.g. App\Http\Controllers\MyController@doSomething)
+		if (!str_contains($actionName, '@')) {
+			return false;
+		}
+
+		$class = explode('@', $actionName)[0];
+
+		// only add a link if this class is its controller's parent
+		if (!is_subclass_of($class, HalApiController::class)) {
+			return false;
+		}
+
+		return true;
 	}
 
 }

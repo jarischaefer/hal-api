@@ -31,7 +31,7 @@ Register the Service Provider in your config/app.php file.
 ```php
 'providers' => [
 
-	Jarischaefer\HalApi\HalApiServiceProvider::class,
+	Jarischaefer\HalApi\Providers\HalApiServiceProvider::class,
 
 ]
 ```
@@ -128,12 +128,12 @@ class UserTransformer extends HalApiTransformer
 
 	protected function getSelf(Model $model)
 	{
-		return HalLink::make($this->routeUsersShow, $model->id); // Defines the link to the current user (e.g. /users/123)
+		return HalApiLink::make($this->routeUsersShow, $model->id); // Defines the link to the current user (e.g. /users/123)
 	}
 
 	protected function getParent(Model $model)
 	{
-		return HalLink::make(RouteHelper::parent($this->routeUsersShow)); // Defines the link to the current user's parent (e.g. /users/123 -> /users)
+		return HalApiLink::make(RouteHelper::parent($this->routeUsersShow)); // Defines the link to the current user's parent (e.g. /users/123 -> /users)
 	}
 
 	protected function getLinks(Model $model)
@@ -170,12 +170,12 @@ class PostTransformer extends HalApiTransformer
 	
 	protected function getSelf(Model $model)
 	{
-		return HalLink::make($this->routePostsShow, $model->id); // Defines the link to the current post (e.g. /posts/123)
+		return HalApiLink::make($this->routePostsShow, $model->id); // Defines the link to the current post (e.g. /posts/123)
 	}
 
 	protected function getParent(Model $model)
 	{
-		return HalLink::make(RouteHelper::parent($this->routePostsShow)); // Defines the link to the current posts's parent (e.g. /posts/123 -> /posts)
+		return HalApiLink::make(RouteHelper::parent($this->routePostsShow)); // Defines the link to the current posts's parent (e.g. /posts/123 -> /posts)
 	}
 
 	protected function getLinks(Model $model)

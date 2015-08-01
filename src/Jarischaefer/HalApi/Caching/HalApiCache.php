@@ -3,7 +3,11 @@
 use Closure;
 use Illuminate\Contracts\Cache\Repository;
 
-class HalApiCacheSimple implements HalApiCacheContract
+/**
+ * Class HalApiCache
+ * @package Jarischaefer\HalApi\Caching
+ */
+class HalApiCache implements HalApiCacheContract
 {
 
 	/**
@@ -19,6 +23,11 @@ class HalApiCacheSimple implements HalApiCacheContract
 	 */
 	private $cacheMinutes;
 
+	/**
+	 * @param Repository $repository
+	 * @param $cacheKey
+	 * @param $cacheMinutes
+     */
 	public function __construct(Repository $repository, $cacheKey, $cacheMinutes)
 	{
 		$this->repository = $repository;
@@ -51,7 +60,7 @@ class HalApiCacheSimple implements HalApiCacheContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function all()
 	{
@@ -59,7 +68,7 @@ class HalApiCacheSimple implements HalApiCacheContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function has($key)
 	{
@@ -67,7 +76,7 @@ class HalApiCacheSimple implements HalApiCacheContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function fetch($key)
 	{
@@ -77,7 +86,7 @@ class HalApiCacheSimple implements HalApiCacheContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function put($key, $value)
 	{
@@ -89,7 +98,7 @@ class HalApiCacheSimple implements HalApiCacheContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function replace($value)
 	{
@@ -99,7 +108,7 @@ class HalApiCacheSimple implements HalApiCacheContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function evict($key)
 	{
@@ -114,7 +123,7 @@ class HalApiCacheSimple implements HalApiCacheContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function purge()
 	{
@@ -122,7 +131,7 @@ class HalApiCacheSimple implements HalApiCacheContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function persist($key, Closure $closure)
 	{
@@ -137,7 +146,7 @@ class HalApiCacheSimple implements HalApiCacheContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function key(...$fragments)
 	{

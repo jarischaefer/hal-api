@@ -20,6 +20,10 @@ class RepresentationFactoryImpl implements RepresentationFactory
 	 */
 	private $routeHelper;
 
+	/**
+	 * @param LinkFactory $linkFactory
+	 * @param RouteHelper $routeHelper
+	 */
 	public function __construct(LinkFactory $linkFactory, RouteHelper $routeHelper)
 	{
 		$this->linkFactory = $linkFactory;

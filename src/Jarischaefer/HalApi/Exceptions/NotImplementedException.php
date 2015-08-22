@@ -2,6 +2,10 @@
 
 use LogicException;
 
+/**
+ * Class NotImplementedException
+ * @package Jarischaefer\HalApi\Exceptions
+ */
 class NotImplementedException extends LogicException
 {
 

@@ -3,6 +3,10 @@
 use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Routing\Route;
 
+/**
+ * Class LinkFactoryImpl
+ * @package Jarischaefer\HalApi\Routing
+ */
 class LinkFactoryImpl implements LinkFactory
 {
 
@@ -11,16 +15,16 @@ class LinkFactoryImpl implements LinkFactory
 	 */
 	private $urlGenerator;
 
+	/**
+	 * @param UrlGenerator $urlGenerator
+	 */
 	public function __construct(UrlGenerator $urlGenerator)
 	{
 		$this->urlGenerator = $urlGenerator;
 	}
 
 	/**
-	 * @param Route $route
-	 * @param array $parameters
-	 * @param string $queryString
-	 * @return HalApiLink
+	 * @inheritdoc
 	 */
 	public function create(Route $route, $parameters = [], $queryString = '')
 	{

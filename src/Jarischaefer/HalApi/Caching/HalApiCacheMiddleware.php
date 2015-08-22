@@ -54,7 +54,7 @@ class HalApiCacheMiddleware
 		$cache = $class::getCache($this->application);
 
 		if ($request->isMethodSafe()) {
-            $key = $this->generateKey($cache, $request);
+			$key = $this->generateKey($cache, $request);
 
 			return $cache->persist($key, function () use ($next, $request) {
 				return $next($request);

@@ -236,7 +236,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 
 	/**
 	 * @param HalApiLink $link
-     */
+	 */
 	private function addSubordinateRoutes(HalApiLink $link)
 	{
 		$subordinateRoutes = $this->routeHelper->subordinates($link->getRoute());

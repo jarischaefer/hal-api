@@ -13,14 +13,14 @@ class HalApiETagMiddleware
 
 	/**
 	 *
-     */
+	 */
 	const NAME = 'hal-api.etag';
 
 	/**
 	 * @param $request
 	 * @param Closure $next
 	 * @return mixed
-     */
+	 */
 	public function handle($request, Closure $next)
 	{
 		$response = $next($request);
@@ -42,7 +42,7 @@ class HalApiETagMiddleware
 	 * @param Request $request
 	 * @param string $responseTag
 	 * @return bool
-     */
+	 */
 	private function eTagsMatch(Request $request, $responseTag)
 	{
 		$requestTags = str_replace('"', '', $request->getETags());

@@ -34,7 +34,7 @@ class HalApiServiceProvider extends ServiceProvider
 
 	/**
 	 * @param Router $router
-     */
+	 */
 	public function boot(Router $router)
 	{
 		$router->middleware(HalApiETagMiddleware::NAME, HalApiETagMiddleware::class);

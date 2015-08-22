@@ -2,6 +2,10 @@
 
 use Exception;
 
+/**
+ * Class Checks
+ * @package Jarischaefer\HalApi\Helpers
+ */
 final class Checks
 {
 
@@ -9,6 +13,11 @@ final class Checks
 	{
 	}
 
+	/**
+	 * @param array $array
+	 * @param $class
+	 * @throws Exception
+	 */
 	public static function arrayType(array $array, $class)
 	{
 		if (!class_exists($class) && !interface_exists($class)) {

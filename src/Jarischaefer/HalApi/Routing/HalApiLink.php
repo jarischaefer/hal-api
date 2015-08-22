@@ -1,14 +1,6 @@
-<?php
-/**
- * Created by PhpStorm.
- * User: jari
- * Date: 01.08.15
- * Time: 15:46
- */
-namespace Jarischaefer\HalApi\Routing;
+<?php namespace Jarischaefer\HalApi\Routing;
 
 use Illuminate\Routing\Route;
-
 
 /**
  * Class HalApiLinkImpl

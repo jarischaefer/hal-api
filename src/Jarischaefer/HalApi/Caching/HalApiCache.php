@@ -27,7 +27,7 @@ class HalApiCache implements HalApiCacheContract
 	 * @param Repository $repository
 	 * @param $cacheKey
 	 * @param $cacheMinutes
-     */
+	 */
 	public function __construct(Repository $repository, $cacheKey, $cacheMinutes)
 	{
 		$this->repository = $repository;

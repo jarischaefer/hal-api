@@ -48,7 +48,11 @@ class HalApiLinkImpl implements HalApiLink
 		$this->parameters = is_array($parameters) ? $parameters : [$parameters];
 		$this->templated = count($this->route->parameterNames()) > 0 ? true : false;
 		$this->queryString = $queryString;
-		$this->link = $this->urlGenerator->action($this->route->getActionName(), $this->parameters) . $queryString;
+		$this->link = $this->urlGenerator->action($this->route->getActionName(), $this->parameters);
+
+		if (!empty($queryString)) {
+			$this->link .= '?' . $queryString;
+		}
 	}
 
 	/**

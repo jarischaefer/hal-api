@@ -2,6 +2,7 @@
 
 use App;
 use Closure;
+use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
@@ -23,10 +24,19 @@ class HalApiCacheMiddleware
 	 * @var Application
 	 */
 	private $application;
+	/**
+	 * @var Repository
+	 */
+	private $config;
 
-	public function __construct(Application $application)
+	/**
+	 * @param Application $application
+	 * @param Repository $config
+	 */
+	public function __construct(Application $application, Repository $config)
 	{
 		$this->application = $application;
+		$this->config = $config;
 	}
 
 	/**
@@ -38,6 +48,14 @@ class HalApiCacheMiddleware
 	 */
 	public function handle($request, Closure $next)
 	{
+		if ($this->config->get('app.debug', false)) {
+			return $next($request);
+		}
+
+		if (!($request instanceof Request)) {
+			return $next($request);
+		}
+
 		$route = $request->route();
 
 		if (!($route instanceof Route)) {
@@ -61,7 +79,6 @@ class HalApiCacheMiddleware
 			});
 		}
 
-		$response = $next($request);
 		$cache->purge();
 		$relatedCaches = $class::getRelatedCaches($this->application);
 
@@ -70,7 +87,7 @@ class HalApiCacheMiddleware
 			$relatedCache->purge();
 		}
 
-		return $response;
+		return $next($request);
 	}
 
 	/**

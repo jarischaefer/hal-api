@@ -2,7 +2,7 @@
 
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\UrlGenerator;
-use Jarischaefer\HalApi\Caching\HalApiCacheContract;
+use Jarischaefer\HalApi\Caching\HalApiCache;
 
 /**
  * Class HalApiControllerContract
@@ -13,13 +13,13 @@ interface HalApiControllerContract
 
 	/**
 	 * @param Application $application
-	 * @return HalApiCacheContract
+	 * @return HalApiCache
 	 */
 	public static function getCache(Application $application);
 
 	/**
 	 * @param Application $application
-	 * @return HalApiCacheContract[]
+	 * @return HalApiCache[]
 	 */
 	public static function getRelatedCaches(Application $application);
 

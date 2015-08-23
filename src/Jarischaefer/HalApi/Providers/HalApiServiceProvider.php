@@ -4,8 +4,8 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Jarischaefer\HalApi\Caching\CacheFactory;
 use Jarischaefer\HalApi\Caching\CacheFactoryImpl;
-use Jarischaefer\HalApi\Caching\HalApiCacheContract;
 use Jarischaefer\HalApi\Caching\HalApiCache;
+use Jarischaefer\HalApi\Caching\HalApiCacheImpl;
 use Jarischaefer\HalApi\Caching\HalApiCacheMiddleware;
 use Jarischaefer\HalApi\Caching\HalApiETagMiddleware;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
@@ -52,7 +52,7 @@ class HalApiServiceProvider extends ServiceProvider
 	public function register()
 	{
 		$this->app->bind(HalApiRepresentation::class, HalApiRepresentationImpl::class);
-		$this->app->bind(HalApiCacheContract::class, HalApiCache::class);
+		$this->app->bind(HalApiCache::class, HalApiCacheImpl::class);
 
 		$this->app->singleton(CacheFactory::class, CacheFactoryImpl::class);
 		$this->app->singleton(TransformerFactory::class, TransformerFactoryImpl::class);

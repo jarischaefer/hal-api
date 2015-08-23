@@ -82,7 +82,7 @@ class HalApiCacheMiddleware
 		$cache->purge();
 		$relatedCaches = $class::getRelatedCaches($this->application);
 
-		/** @var HalApiCacheContract $relatedCache */
+		/** @var HalApiCache $relatedCache */
 		foreach ($relatedCaches as $relatedCache) {
 			$relatedCache->purge();
 		}
@@ -91,11 +91,11 @@ class HalApiCacheMiddleware
 	}
 
 	/**
-	 * @param HalApiCacheContract $cache
+	 * @param HalApiCache $cache
 	 * @param Request $request
 	 * @return string
 	 */
-	private function generateKey(HalApiCacheContract $cache, Request $request)
+	private function generateKey(HalApiCache $cache, Request $request)
 	{
 		$method = $request->getMethod();
 		$uri = $request->getUri();

@@ -13,7 +13,7 @@ interface CacheFactory
 	 * @param Repository $repository
 	 * @param string $cacheKey
 	 * @param int $cacheMinutes
-	 * @return HalApiCacheContract
+	 * @return HalApiCache
 	 */
 	public function create(Repository $repository, $cacheKey, $cacheMinutes);
 

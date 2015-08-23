@@ -14,7 +14,7 @@ class CacheFactoryImpl implements CacheFactory
 	 */
 	public function create(Repository $repository, $cacheKey, $cacheMinutes)
 	{
-		return new HalApiCache($repository, $cacheKey, $cacheMinutes);
+		return new HalApiCacheImpl($repository, $cacheKey, $cacheMinutes);
 	}
 
 }

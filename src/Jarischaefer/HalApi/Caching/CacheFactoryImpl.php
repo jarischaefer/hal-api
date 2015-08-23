@@ -10,11 +10,24 @@ class CacheFactoryImpl implements CacheFactory
 {
 
 	/**
+	 * @var Repository
+	 */
+	private $repository;
+
+	/**
+	 * @param Repository $repository
+	 */
+	public function __construct(Repository $repository)
+	{
+		$this->repository = $repository;
+	}
+
+	/**
 	 * @inheritdoc
 	 */
-	public function create(Repository $repository, $cacheKey, $cacheMinutes)
+	public function create($cacheKey, $cacheMinutes)
 	{
-		return new HalApiCacheImpl($repository, $cacheKey, $cacheMinutes);
+		return new HalApiCacheImpl($this->repository, $cacheKey, $cacheMinutes);
 	}
 
 }

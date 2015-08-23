@@ -113,10 +113,9 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 	{
 		/** @var CacheFactory $cacheFactory */
 		$cacheFactory = $application->make(CacheFactory::class);
-		$repository = $application->make(Repository::class);
 		$cacheKey = self::CACHE_GLOBAL_PREFIX . '_' . static::class;
 
-		return $cacheFactory->create($repository, $cacheKey, self::CACHE_MINUTES);
+		return $cacheFactory->create($cacheKey, self::CACHE_MINUTES);
 	}
 
 	/**

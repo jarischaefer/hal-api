@@ -120,12 +120,18 @@ abstract class HalApiTransformer
 	 * @param Model $model
 	 * @return HalApiLink[]
 	 */
-	abstract protected function getLinks(Model $model);
+	protected function getLinks(Model $model)
+	{
+		return [];
+	}
 
 	/**
 	 * @param Model $model
 	 * @return array
 	 */
-	abstract protected function getEmbedded(Model $model);
+	protected function getEmbedded(Model $model)
+	{
+		return [];
+	}
 
 }

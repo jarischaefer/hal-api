@@ -1,7 +1,5 @@
 <?php namespace Jarischaefer\HalApi\Controllers;
 
-use App;
-use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Contracts\Routing\UrlGenerator;
@@ -31,7 +29,7 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 	/**
 	 * Global prefix for the managed cache.
 	 */
-	const CACHE_GLOBAL_PREFIX = HalApiResourceController::class . '_cache';
+	const CACHE_GLOBAL_PREFIX = HalApiController::class . '_cache';
 	/**
 	 * The TTL for managed cache entries.
 	 */
@@ -109,19 +107,15 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 	/**
 	 * @inheritdoc
 	 */
-	public static function getCache(Application $application)
+	public static function getCache(CacheFactory $cacheFactory)
 	{
-		/** @var CacheFactory $cacheFactory */
-		$cacheFactory = $application->make(CacheFactory::class);
-		$cacheKey = self::CACHE_GLOBAL_PREFIX . '_' . static::class;
-
-		return $cacheFactory->create($cacheKey, self::CACHE_MINUTES);
+		return $cacheFactory->create(self::CACHE_GLOBAL_PREFIX . '_' . static::class, self::CACHE_MINUTES);
 	}
 
 	/**
 	 * @inheritdoc
 	 */
-	public static function getRelatedCaches(Application $application)
+	public static function getRelatedCaches(CacheFactory $cacheFactory)
 	{
 		return [];
 	}

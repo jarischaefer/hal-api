@@ -1,7 +1,7 @@
 <?php namespace Jarischaefer\HalApi\Controllers;
 
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\UrlGenerator;
+use Jarischaefer\HalApi\Caching\CacheFactory;
 use Jarischaefer\HalApi\Caching\HalApiCache;
 
 /**
@@ -12,16 +12,16 @@ interface HalApiControllerContract
 {
 
 	/**
-	 * @param Application $application
+	 * @param CacheFactory $cacheFactory
 	 * @return HalApiCache
 	 */
-	public static function getCache(Application $application);
+	public static function getCache(CacheFactory $cacheFactory);
 
 	/**
-	 * @param Application $application
+	 * @param CacheFactory $cacheFactory
 	 * @return HalApiCache[]
 	 */
-	public static function getRelatedCaches(Application $application);
+	public static function getRelatedCaches(CacheFactory $cacheFactory);
 
 	/**
 	 * Returns a controller's relation. The relation is a way of interacting with resources using

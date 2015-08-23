@@ -47,11 +47,11 @@ class HalApiLinkImpl implements HalApiLink
 		$this->route = $route;
 		$this->parameters = is_array($parameters) ? $parameters : [$parameters];
 		$this->templated = count($this->route->parameterNames()) > 0 ? true : false;
-		$this->queryString = $queryString;
+		$this->queryString = self::createQueryString($queryString);
 		$this->link = $this->urlGenerator->action($this->route->getActionName(), $this->parameters);
 
-		if (!empty($queryString)) {
-			$this->link .= '?' . $queryString;
+		if (!empty($this->queryString)) {
+			$this->link .= '?' . $this->queryString;
 		}
 	}
 
@@ -115,6 +115,15 @@ class HalApiLinkImpl implements HalApiLink
 	public function __toString()
 	{
 		return json_encode($this->build());
+	}
+
+	/**
+	 * @param string $queryString
+	 * @return string
+	 */
+	private static function createQueryString($queryString)
+	{
+		return empty($queryString) ? '' : ($queryString[0] === '?' ? substr($queryString, 1) : $queryString);
 	}
 
 }

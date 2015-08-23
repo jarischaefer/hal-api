@@ -66,7 +66,10 @@ class HalApiLinkTest extends TestCase
 		$route = new Route(['GET'], '/parameters/{parameter}', ['controller' => 'Foo\Bar\Controllers\TestController@doSomething']);
 		$link = new HalApiLinkImpl($urlGenerator, $route, ['foo'], '?bar=test');
 
-		$this->assertEquals('?bar=test', $link->getQueryString());
+		$this->assertEquals('bar=test', $link->getQueryString());
+
+		$link = new HalApiLinkImpl($urlGenerator, $route, ['foo'], 'bar=test');
+		$this->assertEquals('bar=test', $link->getQueryString());
 	}
 
 	public function testIsTemplated()

@@ -23,7 +23,7 @@ class LinkFactoryImplTest extends TestCase
 
 		$this->assertEquals('/params/foo/bar?foo=bar', $link->getLink());
 		$this->assertEquals(['foo', 'bar'], $link->getParameters());
-		$this->assertEquals('?foo=bar', $link->getQueryString());
+		$this->assertEquals('foo=bar', $link->getQueryString());
 	}
 
 }

@@ -1,12 +1,10 @@
 <?php namespace Jarischaefer\HalApi\Caching;
 
-use App;
 use Closure;
 use Illuminate\Contracts\Config\Repository;
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
-use Jarischaefer\HalApi\Controllers\HalApiController;
+use Jarischaefer\HalApi\Controllers\HalApiControllerContract;
 
 /**
  * Class HalApiCacheMiddleware
@@ -21,21 +19,21 @@ class HalApiCacheMiddleware
 	const NAME = 'hal-api.cache';
 
 	/**
-	 * @var Application
+	 * @var CacheFactory
 	 */
-	private $application;
+	private $cacheFactory;
 	/**
 	 * @var Repository
 	 */
 	private $config;
 
 	/**
-	 * @param Application $application
+	 * @param CacheFactory $cacheFactory
 	 * @param Repository $config
 	 */
-	public function __construct(Application $application, Repository $config)
+	public function __construct(CacheFactory $cacheFactory, Repository $config)
 	{
-		$this->application = $application;
+		$this->cacheFactory = $cacheFactory;
 		$this->config = $config;
 	}
 
@@ -64,12 +62,12 @@ class HalApiCacheMiddleware
 
 		$class = explode('@', $route->getActionName())[0];
 
-		if (!is_subclass_of($class, HalApiController::class)) {
+		if (!is_subclass_of($class, HalApiControllerContract::class)) {
 			return $next($request);
 		}
 
-		/** @var HalApiController $class */
-		$cache = $class::getCache($this->application);
+		/** @var HalApiControllerContract $class */
+		$cache = $class::getCache($this->cacheFactory);
 
 		if ($request->isMethodSafe()) {
 			$key = $this->generateKey($cache, $request);
@@ -80,10 +78,8 @@ class HalApiCacheMiddleware
 		}
 
 		$cache->purge();
-		$relatedCaches = $class::getRelatedCaches($this->application);
 
-		/** @var HalApiCache $relatedCache */
-		foreach ($relatedCaches as $relatedCache) {
+		foreach ($class::getRelatedCaches($this->cacheFactory) as $relatedCache) {
 			$relatedCache->purge();
 		}
 

@@ -52,11 +52,12 @@ class HalApiServiceProvider extends ServiceProvider
 	public function register()
 	{
 		$this->app->bind(HalApiRepresentation::class, HalApiRepresentationImpl::class);
-		$this->app->bind(CacheFactory::class, CacheFactoryImpl::class);
 		$this->app->bind(HalApiCacheContract::class, HalApiCache::class);
-		$this->app->bind(TransformerFactory::class, TransformerFactoryImpl::class);
-		$this->app->bind(LinkFactory::class, LinkFactoryImpl::class);
-		$this->app->bind(RepresentationFactory::class, RepresentationFactoryImpl::class);
+
+		$this->app->singleton(CacheFactory::class, CacheFactoryImpl::class);
+		$this->app->singleton(TransformerFactory::class, TransformerFactoryImpl::class);
+		$this->app->singleton(LinkFactory::class, LinkFactoryImpl::class);
+		$this->app->singleton(RepresentationFactory::class, RepresentationFactoryImpl::class);
 	}
 
 	/**

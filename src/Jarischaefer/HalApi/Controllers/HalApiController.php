@@ -133,7 +133,7 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 	 */
 	public static function actionName($methodName)
 	{
-		return get_called_class() . '@' . $methodName;
+		return static::class . '@' . $methodName;
 	}
 
 	/**
@@ -141,15 +141,9 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 	 */
 	public static function action(UrlGenerator $urlGenerator, $methodName, $parameters = [])
 	{
-		$class = get_called_class();
-
-		if (!method_exists($class, $methodName)) {
-			throw new RuntimeException('Method does not exist!');
-		}
-
 		$parameters = is_array($parameters) ? $parameters : [$parameters];
 
-		return $urlGenerator->action($class . '@' . $methodName, $parameters);
+		return $urlGenerator->action(self::actionName($methodName), $parameters);
 	}
 
 }

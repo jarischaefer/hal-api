@@ -97,7 +97,7 @@ abstract class HalApiResourceController extends HalApiController
 	abstract protected function getModel();
 
 	/**
-	 * @param Application $application
+	 * @param Application $app
 	 * @param Request $request
 	 * @param LinkFactory $linkFactory
 	 * @param RepresentationFactory $representationFactory
@@ -105,9 +105,9 @@ abstract class HalApiResourceController extends HalApiController
 	 * @param TransformerFactory $transformerFactory
 	 * @param ResponseFactory $responseFactory
 	 */
-	public function __construct(Application $application, Request $request, LinkFactory $linkFactory, RepresentationFactory $representationFactory, RouteHelper $routeHelper, TransformerFactory $transformerFactory, ResponseFactory $responseFactory)
+	public function __construct(Application $app, Request $request, LinkFactory $linkFactory, RepresentationFactory $representationFactory, RouteHelper $routeHelper, TransformerFactory $transformerFactory, ResponseFactory $responseFactory)
 	{
-		parent::__construct($application, $request, $linkFactory, $representationFactory, $routeHelper, $responseFactory);
+		parent::__construct($app, $request, $linkFactory, $representationFactory, $routeHelper, $responseFactory);
 
 		$this->transformerFactory = $transformerFactory;
 		$this->boot();
@@ -213,7 +213,7 @@ abstract class HalApiResourceController extends HalApiController
 	 */
 	protected function boot()
 	{
-		// do not put anything here, children should not call this method
+		// do not put anything here, children should not have to call this method
 	}
 
 	/**

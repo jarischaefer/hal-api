@@ -15,7 +15,6 @@ use Jarischaefer\HalApi\Helpers\RouteHelper;
 use Jarischaefer\HalApi\Representations\RepresentationFactory;
 use Jarischaefer\HalApi\Routing\HalApiLink;
 use Jarischaefer\HalApi\Routing\LinkFactory;
-use RuntimeException;
 
 /**
  * Class HalApiController
@@ -38,7 +37,7 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 	/**
 	 * @var Application
 	 */
-	protected $application;
+	protected $app;
 	/**
 	 * @var Request
 	 */
@@ -77,16 +76,16 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 	protected $parent;
 
 	/**
-	 * @param Application $application
+	 * @param Application $app
 	 * @param Request $request
 	 * @param LinkFactory $linkFactory
 	 * @param RepresentationFactory $representationFactory
 	 * @param RouteHelper $routeHelper
 	 * @param ResponseFactory $responseFactory
 	 */
-	public function __construct(Application $application, Request $request, LinkFactory $linkFactory, RepresentationFactory $representationFactory, RouteHelper $routeHelper, ResponseFactory $responseFactory)
+	public function __construct(Application $app, Request $request, LinkFactory $linkFactory, RepresentationFactory $representationFactory, RouteHelper $routeHelper, ResponseFactory $responseFactory)
 	{
-		$this->application = $application;
+		$this->app = $app;
 		$this->request = $request;
 		$this->linkFactory = $linkFactory;
 		$this->representationFactory = $representationFactory;

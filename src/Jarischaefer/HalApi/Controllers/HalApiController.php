@@ -129,10 +129,7 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 	}
 
 	/**
-	 * Returns the action name (e.g. App\Http\Controllers\MyController@doSomething).
-	 *
-	 * @param string $methodName
-	 * @return string
+	 * @inheritdoc
 	 */
 	public static function actionName($methodName)
 	{
@@ -140,19 +137,7 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 	}
 
 	/**
-	 * Generates a URL for the given method name and parameters.
-	 * If your routes.php contains an entry for /users linked to the
-	 * index method and another entry for /users/{users} linked to the
-	 * show method, then a call to this method would yield the following result:
-	 *
-	 * UsersController::action($urlGenerator, 'show', '99e31491-dd32-4e2c-b221-7deeb6cc4853')
-	 *
-	 * http://my.app.example.com/users/99e31491-dd32-4e2c-b221-7deeb6cc4853
-	 *
-	 * @param UrlGenerator $urlGenerator
-	 * @param string $methodName
-	 * @param array $parameters
-	 * @return string
+	 * @inheritdoc
 	 */
 	public static function action(UrlGenerator $urlGenerator, $methodName, $parameters = [])
 	{

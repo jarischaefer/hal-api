@@ -1,15 +1,12 @@
 <?php namespace Jarischaefer\HalApi\Controllers;
 
-use App;
-use Config;
 use Exception;
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Input;
 use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
 use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
@@ -32,10 +29,6 @@ abstract class HalApiResourceController extends HalApiController
 {
 
 	/**
-	 * Configuration key for default pagination size (number of items per page).
-	 */
-	const CONFIG_PAGINATION_DEFAULT_PER_PAGE = 'pagination.default.per_page';
-	/**
 	 * Query parameter name used for pagination's current page.
 	 */
 	const PAGINATION_URI_PAGE = 'page';
@@ -49,10 +42,6 @@ abstract class HalApiResourceController extends HalApiController
 	 */
 	const PAGINATION_DEFAULT_ITEMS_PER_PAGE = 10;
 
-	/**
-	 * @var int
-	 */
-	private $defaultPerPage;
 	/**
 	 * @var TransformerFactory
 	 */
@@ -112,7 +101,7 @@ abstract class HalApiResourceController extends HalApiController
 		$this->transformerFactory = $transformerFactory;
 		$this->boot();
 
-		if (App::runningInConsole() && !App::runningUnitTests()) {
+		if ($this->app->runningInConsole() && !$this->app->runningUnitTests()) {
 			return;
 		}
 
@@ -125,12 +114,6 @@ abstract class HalApiResourceController extends HalApiController
 
 		if (!is_subclass_of($this->model, Model::class)) {
 			throw new RuntimeException('Model must be child of ' . Model::class);
-		}
-
-		$this->defaultPerPage = (int)Config::get(self::CONFIG_PAGINATION_DEFAULT_PER_PAGE);
-
-		if ($this->defaultPerPage < 1) {
-			$this->defaultPerPage = self::PAGINATION_DEFAULT_ITEMS_PER_PAGE;
 		}
 
 		$this->preparePagination();
@@ -195,15 +178,15 @@ abstract class HalApiResourceController extends HalApiController
 	 */
 	private function preparePagination()
 	{
-		$this->page = (int)Input::get(self::PAGINATION_URI_PAGE, 1);
-		$this->perPage = (int)Input::get(self::PAGINATION_URI_PER_PAGE, $this->defaultPerPage);
+		$this->page = (int)$this->request->get(self::PAGINATION_URI_PAGE, 1);
+		$this->perPage = (int)$this->request->get(self::PAGINATION_URI_PER_PAGE, self::PAGINATION_DEFAULT_ITEMS_PER_PAGE);
 
 		if (!is_numeric($this->page)) {
 			$this->page = 1;
 		}
 
 		if (!is_numeric($this->perPage)) {
-			$this->perPage = $this->defaultPerPage;
+			$this->perPage = self::PAGINATION_DEFAULT_ITEMS_PER_PAGE;
 		}
 	}
 

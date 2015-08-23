@@ -2,7 +2,7 @@
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Class HalApiETagMiddleware
@@ -30,7 +30,7 @@ class HalApiETagMiddleware
 			$response->setMaxAge(0);
 			$response->setEtag($responseTag);
 
-			if ($this->eTagsMatch($request, $responseTag)) {
+			if (self::eTagsMatch($request, $responseTag)) {
 				$response->setNotModified();
 			}
 		}
@@ -43,7 +43,7 @@ class HalApiETagMiddleware
 	 * @param string $responseTag
 	 * @return bool
 	 */
-	private function eTagsMatch(Request $request, $responseTag)
+	private static function eTagsMatch(Request $request, $responseTag)
 	{
 		$requestTags = str_replace('"', '', $request->getETags());
 

@@ -25,12 +25,51 @@ use Jarischaefer\HalApi\Transformers\TransformerFactoryImpl;
 class HalApiServiceProvider extends ServiceProvider
 {
 
+	const BASE_PATH = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR;
+
+	const COMPILES = [
+		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'CacheFactory.php',
+		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'CacheFactoryImpl.php',
+		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'HalApiCache.php',
+		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'HalApiCacheImpl.php',
+		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'HalApiCacheMiddleware.php',
+		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'HalApiETagMiddleware.php',
+
+		self::BASE_PATH . 'Controllers' . DIRECTORY_SEPARATOR . 'HalApiController.php',
+		self::BASE_PATH . 'Controllers' . DIRECTORY_SEPARATOR . 'HalApiControllerContract.php',
+		self::BASE_PATH . 'Controllers' . DIRECTORY_SEPARATOR . 'HalApiResourceController.php',
+
+		self::BASE_PATH . 'Helpers' . DIRECTORY_SEPARATOR . 'RouteHelper.php',
+
+		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiRepresentation.php',
+		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiRepresentationImpl.php',
+		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'RepresentationFactory.php',
+		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'RepresentationFactoryImpl.php',
+
+		self::BASE_PATH . 'Routing' . DIRECTORY_SEPARATOR . 'HalApiLink.php',
+		self::BASE_PATH . 'Routing' . DIRECTORY_SEPARATOR . 'HalApiLinkImpl.php',
+		self::BASE_PATH . 'Routing' . DIRECTORY_SEPARATOR . 'LinkFactory.php',
+		self::BASE_PATH . 'Routing' . DIRECTORY_SEPARATOR . 'LinkFactoryImpl.php',
+
+		self::BASE_PATH . 'Transformers' . DIRECTORY_SEPARATOR . 'HalApiTransformer.php',
+		self::BASE_PATH . 'Transformers' . DIRECTORY_SEPARATOR . 'TransformerFactory.php',
+		self::BASE_PATH . 'Transformers' . DIRECTORY_SEPARATOR . 'TransformerFactoryImpl.php',
+	];
+
 	/**
 	 * Indicates if loading of the provider is deferred.
 	 *
 	 * @var bool
 	 */
 	protected $defer = false;
+
+	/**
+	 * @inheritdoc
+	 */
+	public static function compiles()
+	{
+		return self::COMPILES;
+	}
 
 	/**
 	 * @param Router $router

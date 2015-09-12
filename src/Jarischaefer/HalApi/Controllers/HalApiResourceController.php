@@ -99,7 +99,6 @@ abstract class HalApiResourceController extends HalApiController
 		parent::__construct($app, $request, $linkFactory, $representationFactory, $routeHelper, $responseFactory);
 
 		$this->transformerFactory = $transformerFactory;
-		$this->boot();
 
 		if ($this->app->runningInConsole() && !$this->app->runningUnitTests()) {
 			return;
@@ -117,6 +116,7 @@ abstract class HalApiResourceController extends HalApiController
 		}
 
 		$this->preparePagination();
+		$this->boot();
 	}
 
 	/**
@@ -191,7 +191,6 @@ abstract class HalApiResourceController extends HalApiController
 	}
 
 	/**
-	 * Executed as an early step in the constructor.
 	 * Helps if one does not wish to override the constructor and consequently inherit all its default parameters.
 	 */
 	protected function boot()

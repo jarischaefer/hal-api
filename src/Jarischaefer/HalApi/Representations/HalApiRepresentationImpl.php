@@ -1,6 +1,5 @@
 <?php namespace Jarischaefer\HalApi\Representations;
 
-use Illuminate\Routing\Route;
 use InvalidArgumentException;
 use Jarischaefer\HalApi\Controllers\HalApiController;
 use Jarischaefer\HalApi\Helpers\Checks;
@@ -43,7 +42,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	 */
 	private $data = [];
 	/**
-	 * @var array
+	 * @var HalApiLink[]
 	 */
 	private $links = [];
 	/**
@@ -240,7 +239,6 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	{
 		$subordinateRoutes = $this->routeHelper->subordinates($link->getRoute());
 
-		/* @var Route $subRoute */
 		foreach ($subordinateRoutes as $subRoute) {
 			/* @var HalApiController $class */
 			list($class, $method) = explode('@', $subRoute->getActionName());
@@ -260,7 +258,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 				throw new RuntimeException('relation for self is not defined, cannot add subordinate routes');
 			}
 
-			/* @var HalApiLink $self */
+			/** @var HalApiLink $self */
 			$self = $this->links[self::SELF];
 			$this->addSubordinateRoutes($self);
 		}
@@ -272,7 +270,6 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 			$build['data'] = $this->data;
 		}
 
-		/* @var HalApiLink $link */
 		foreach ($this->links as $relation => $link) {
 			$build['_links'][$relation] = $link->build();
 		}
@@ -280,8 +277,8 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 		$build['_embedded'] = [];
 
 		foreach ($this->embedded as $relation => $embedded) {
-			/* @var HalApiRepresentation $item */
 			if (is_array($embedded)) {
+				/* @var HalApiRepresentation $item */
 				foreach ($embedded as $item) {
 					$build['_embedded'][$relation][] = $item->build();
 				}

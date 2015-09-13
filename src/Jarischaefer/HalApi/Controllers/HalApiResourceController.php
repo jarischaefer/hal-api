@@ -147,7 +147,7 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 			$this->page = 1;
 		}
 
-		if (!is_numeric($this->perPage)) {
+		if (!is_numeric($this->perPage) || $this->perPage < 1) {
 			$this->perPage = self::PAGINATION_DEFAULT_ITEMS_PER_PAGE;
 		}
 	}
@@ -172,8 +172,7 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	protected function paginate(LengthAwarePaginator $paginator)
 	{
 		$route = $this->self->getRoute();
-		$routeParameters = $this->self->getParameters();
-		$queryString = self::PAGINATION_URI_PER_PAGE . '=' . $this->perPage . '&' . self::PAGINATION_URI_PAGE . '=';
+		$routeParameters = array_merge($this->self->getParameters(), ['per_page' => $this->perPage]);
 		$items = $paginator->items();
 
 		$response = $this->representationFactory->create($this->self, $this->parent)
@@ -187,19 +186,19 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 				'total' => $paginator->total(),
 				'pages' => $paginator->lastPage() ?: 1,
 			])
-			->link('first', $this->linkFactory->create($route, $routeParameters, $queryString . '1'));
+			->link('first', $this->linkFactory->create($route, array_merge($routeParameters, ['page' => 1])));
 
 		if ($paginator->currentPage() > 1) {
-			$prev = $this->linkFactory->create($route, $routeParameters, $queryString . ($paginator->currentPage() - 1));
+			$prev = $this->linkFactory->create($route, array_merge($routeParameters, ['page' => $paginator->currentPage() - 1]));
 			$response->link('prev', $prev);
 		}
 
 		if ($paginator->currentPage() < $paginator->lastPage()) {
-			$next = $this->linkFactory->create($route, $routeParameters, $queryString . ($paginator->currentPage() + 1));
+			$next = $this->linkFactory->create($route, array_merge($routeParameters, ['page' => $paginator->currentPage() + 1]));
 			$response->link('next', $next);
 		}
 
-		$response->link('last', $this->linkFactory->create($route, $routeParameters, $queryString . ($paginator->lastPage() ?: 1)));
+		$response->link('last', $this->linkFactory->create($route, array_merge($routeParameters, ['page' => $paginator->lastPage() ?: 1])));
 
 		return $response;
 	}

@@ -44,7 +44,7 @@ class RouteHelperTest extends TestCase
 		$router = new Router($dispatcher, null);
 
 		$helper = RouteHelper::make($router);
-		$helper->resource('test', TestController::class)->pagination()->done();
+		$helper->resource('test', TestController::class)->done();
 
 		$routes = $router->getRoutes();
 

@@ -4,7 +4,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
-use Jarischaefer\HalApi\Controllers\HalApiController;
+use Jarischaefer\HalApi\Controllers\HalApiControllerContract;
 use ReflectionClass;
 use RuntimeException;
 
@@ -14,34 +14,8 @@ use RuntimeException;
  * Class RouteHelper
  * @package Jarischaefer\HalApi\Helpers
  */
-class RouteHelper
+class RouteHelper implements RouteHelperConstants
 {
-
-	/**
-	 * Method name for GET requests that list all resources (possibly paginated).
-	 */
-	const INDEX = 'index';
-	/**
-	 * Method name for GET requests that request a specific resource.
-	 */
-	const SHOW = 'show';
-	/**
-	 * Method name for POST requests that create a new resource.
-	 */
-	const STORE = 'store';
-	/**
-	 * Method name for PUT and PATCH requests that either create or fully update (PUT)
-	 * or partially update (PATCH) a resource.
-	 */
-	const UPDATE = 'update';
-	/**
-	 * Method name for DELETE requests that delete an existing resource.
-	 */
-	const DESTROY = 'destroy';
-	/**
-	 * Query string for pagination purposes.
-	 */
-	const PAGINATION_URI	= 'current_page={current_page}&per_page={per_page}';
 
 	/**
 	 * Holds routes belonging to an action name.
@@ -103,7 +77,7 @@ class RouteHelper
 	 */
 	public function resource($name, $controller, $methods = [self::INDEX, self::SHOW, self::STORE, self::UPDATE, self::DESTROY])
 	{
-		return ResourceRoute::make($name, $controller, $this, $methods);
+		return new ResourceRoute($name, $controller, $this, $methods);
 	}
 
 	/**
@@ -183,7 +157,7 @@ class RouteHelper
 
 	/**
 	 * Registers a new GET route with pagination parameters. Pagination parameters are appended to the current
-	 * query string. An URI like /users/{userid}/friends?age=5 would result in/users/{userid}/friends?age=5&current_page={current_page}&per_page={per_page}.
+	 * query string. An URI like /users/{userid}/friends?age=5 would result in/users/{userid}/friends?age=5&page={page}&per_page={per_page}.
 	 *
 	 * @param string $uri The URI (e.g. / or /users or /users/{param}/friends).
 	 * @param string $controller The path to the controller handling the resource (e.g. UsersController::class or App\Http\Controllers\UsersController).
@@ -237,7 +211,7 @@ class RouteHelper
 
 		$lastSlash = strripos($child->getUri(), '/');
 		$guessedParentUri = $lastSlash !== FALSE ? substr($child->getUri(), 0, $lastSlash) : '/';
-		$request = new Request();
+		$request = new Request;
 		$reflectionClass = new ReflectionClass($request);
 		$pathInfo = $reflectionClass->getProperty('pathInfo');
 		$pathInfo->setAccessible(true);
@@ -276,7 +250,7 @@ class RouteHelper
 	 * like /users/{userid}, /users/new.
 	 *
 	 * @param Route $parentRoute
-	 * @return \Illuminate\Routing\Route[]
+	 * @return Route[]
 	 */
 	public function subordinates(Route $parentRoute)
 	{
@@ -287,9 +261,9 @@ class RouteHelper
 		$routes = $this->router->getRoutes();
 		$children = [];
 
-		/* @var Route $route */
+		/** @var Route $route */
 		foreach ($routes as $route) {
-			if (!RouteHelper::isValid($route)) {
+			if (!self::isValid($route)) {
 				continue;
 			}
 
@@ -310,7 +284,7 @@ class RouteHelper
 	}
 
 	/**
-	 * Checks if a route is bound to an implementation of {@see HalApiController}
+	 * Checks if a route is bound to an implementation of {@see HalApiControllerContract}
 	 *
 	 * @param Route $route
 	 * @return bool
@@ -327,7 +301,7 @@ class RouteHelper
 		$class = explode('@', $actionName)[0];
 
 		// only add a link if this class is its controller's parent
-		if (!is_subclass_of($class, HalApiController::class)) {
+		if (!is_subclass_of($class, HalApiControllerContract::class)) {
 			return false;
 		}
 

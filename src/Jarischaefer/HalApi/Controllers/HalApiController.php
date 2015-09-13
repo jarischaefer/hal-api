@@ -98,7 +98,7 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 
 		if ($route) {
 			$routeParameters = $route->parameters();
-			$this->self = $this->linkFactory->create($route, $routeParameters, $request->getQueryString());
+			$this->self = $this->linkFactory->create($route, $routeParameters);
 			$this->parent = $this->linkFactory->create($routeHelper->parent($route), $routeParameters);
 		}
 	}

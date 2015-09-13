@@ -36,7 +36,6 @@ class ResourceRouteTest extends TestCase
 			->put('put_test', 'put_test')
 			->patch('patch_test', 'patch_test')
 			->delete('delete_test', 'delete_test')
-			->pagination()
 			->rawGet('rawget', 'rawget')
 			->rawPost('rawpost', 'rawpost')
 			->rawPut('rawput', 'rawput')

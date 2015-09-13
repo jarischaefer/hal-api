@@ -25,8 +25,13 @@ use Jarischaefer\HalApi\Transformers\TransformerFactoryImpl;
 class HalApiServiceProvider extends ServiceProvider
 {
 
+	/**
+	 * Base path in the vendor folder.
+	 */
 	const BASE_PATH = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR;
-
+	/**
+	 * List of files for Laravel's compiled.php.
+	 */
 	const COMPILES = [
 		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'CacheFactory.php',
 		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'CacheFactoryImpl.php',
@@ -39,7 +44,10 @@ class HalApiServiceProvider extends ServiceProvider
 		self::BASE_PATH . 'Controllers' . DIRECTORY_SEPARATOR . 'HalApiControllerContract.php',
 		self::BASE_PATH . 'Controllers' . DIRECTORY_SEPARATOR . 'HalApiResourceController.php',
 
+		self::BASE_PATH . 'Helpers' . DIRECTORY_SEPARATOR . 'ResourceRoute.php',
 		self::BASE_PATH . 'Helpers' . DIRECTORY_SEPARATOR . 'RouteHelper.php',
+		self::BASE_PATH . 'Helpers' . DIRECTORY_SEPARATOR . 'RouteHelperConstants.php',
+		self::BASE_PATH . 'Helpers' . DIRECTORY_SEPARATOR . 'SafeIndexArray.php',
 
 		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiRepresentation.php',
 		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiRepresentationImpl.php',

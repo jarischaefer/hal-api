@@ -1,6 +1,5 @@
 <?php namespace Jarischaefer\HalApi\Representations;
 
-use App;
 use Illuminate\Routing\Route;
 use InvalidArgumentException;
 use Jarischaefer\HalApi\Controllers\HalApiController;

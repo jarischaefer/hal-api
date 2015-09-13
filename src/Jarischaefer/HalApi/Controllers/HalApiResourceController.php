@@ -1,12 +1,12 @@
 <?php namespace Jarischaefer\HalApi\Controllers;
 
 use Exception;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
 use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
@@ -25,7 +25,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  * Class HalApiResourceController
  * @package Jarischaefer\HalApi\Controllers
  */
-abstract class HalApiResourceController extends HalApiController
+abstract class HalApiResourceController extends HalApiController implements HalApiResourceControllerContract
 {
 
 	/**
@@ -79,13 +79,6 @@ abstract class HalApiResourceController extends HalApiController
 	abstract protected function getTransformer();
 
 	/**
-	 * The full class name for the controller's model.
-	 *
-	 * @return string
-	 */
-	abstract protected function getModel();
-
-	/**
 	 * @param Application $app
 	 * @param Request $request
 	 * @param LinkFactory $linkFactory
@@ -105,7 +98,7 @@ abstract class HalApiResourceController extends HalApiController
 		}
 
 		$this->transformer = $this->getTransformer();
-		$this->model = (string)$this->getModel();
+		$this->model = static::getModel();
 
 		if (!is_subclass_of($this->transformer, HalApiTransformer::class)) {
 			throw new RuntimeException('Transformer must be child of ' . HalApiTransformer::class);
@@ -120,43 +113,12 @@ abstract class HalApiResourceController extends HalApiController
 	}
 
 	/**
-	 * Default callback for route model bindings (typically registered in the RouteServiceProvider).
-	 * A GET route to /users/{users} needs a binding so the model is automatically passed to the controller's
-	 * method. In this example, we're showing a single user via the show method. The show method could look like this:
-	 *
-	 * public function show(User $user)
-	 * {
-	 *        // do fancy stuff with user model
-	 * }
-	 *
-	 * The PUT request is a special case though. It can handle both creating a new record and updating an existing one.
-	 * Therefore we cannot simply return 404 if the model does not exist. Instead, the PUT request throws no
-	 * exception.
-	 *
-	 * If you do not typehint your method (take a look at the update method in this class), the variable passed
-	 * will be null. Otherwise an instance of your model with the ->exists property set to false is passed.
-	 *
-	 * public function update($user = null)
-	 * {
-	 *        var_dump($user) // null if not found in database
-	 * }
-	 *
-	 * public function update(User $user)
-	 * {
-	 *        var_dump($user->exists) // false if not found in database
-	 * }
-	 *
-	 * The latter is preferred for specific implementations where you know the model's type. Of course, we have no
-	 * knowledge of the implementing class's model (since we have no generics in PHP).
-	 *
-	 * @return callable
+	 * @inheritdoc
 	 */
 	public static function getModelBindingCallback()
 	{
 		return function () {
-			$method = \Request::getMethod();
-
-			switch ($method) {
+			switch (\Request::getMethod()) {
 				case Request::METHOD_GET:
 					throw new NotFoundHttpException;
 				case Request::METHOD_POST:
@@ -212,15 +174,16 @@ abstract class HalApiResourceController extends HalApiController
 		$route = $this->self->getRoute();
 		$routeParameters = $this->self->getParameters();
 		$queryString = self::PAGINATION_URI_PER_PAGE . '=' . $this->perPage . '&' . self::PAGINATION_URI_PAGE . '=';
+		$items = $paginator->items();
 
 		$response = $this->representationFactory->create($this->self, $this->parent)
 			->embedFromArray([
-				static::getRelation(RouteHelper::SHOW) => $this->transformer->collection($paginator->items()),
+				static::getRelation(RouteHelper::SHOW) => $this->transformer->collection($items),
 			])
 			->meta('pagination', [
 				'page' => $paginator->currentPage(),
 				'per_page' => $paginator->perPage(),
-				'count' => $paginator->count(),
+				'count' => count($items),
 				'total' => $paginator->total(),
 				'pages' => $paginator->lastPage() ?: 1,
 			])
@@ -242,15 +205,11 @@ abstract class HalApiResourceController extends HalApiController
 	}
 
 	/**
-	 * Returns a paginated API response containing n models where n equals either the default number of models per page
-	 * or the number specified by the user. The models are embedded into the response.
-	 *
-	 * @return Response
-	 * @throws Exception
+	 * @inheritdoc
 	 */
 	public function index()
 	{
-		/* @var Model $model */
+		/** @var Model $model */
 		$model = $this->model;
 		$paginator = $model::paginate($this->perPage);
 
@@ -258,10 +217,7 @@ abstract class HalApiResourceController extends HalApiController
 	}
 
 	/**
-	 * Returns an API response containing the data of the specified model.
-	 *
-	 * @param $model
-	 * @return Response
+	 * @inheritdoc
 	 */
 	public function show($model)
 	{
@@ -270,17 +226,11 @@ abstract class HalApiResourceController extends HalApiController
 	}
 
 	/**
-	 * Takes attributes from the JSON request body and stores them inside a new instance of the controller's model.
-	 * This method also ensures that all the model's fillable (see the guarded variable inside the model class)
-	 * attributes are present inside the JSON request body. Make sure you use this method for POST requests only.
-	 *
-	 * @return Response
-	 * @throws BadPostRequestException
-	 * @throws DatabaseSaveException
+	 * @inheritdoc
 	 */
 	public function store()
 	{
-		/* @var Model $model */
+		/** @var Model $model */
 		$model = new $this->model;
 		$keys = array_keys($this->body->getArray());
 		$columnNames = Schema::getColumnListing($model->getTable());
@@ -306,13 +256,7 @@ abstract class HalApiResourceController extends HalApiController
 	}
 
 	/**
-	 * Handles PUT and PATCH requests trying to create or update a model. Parameters are taken from the JSON request
-	 * body. PUT requests must contain all fillable attributes.
-	 *
-	 * @param null $model
-	 * @return array
-	 * @throws BadPutRequestException
-	 * @throws DatabaseSaveException
+	 * @inheritdoc
 	 */
 	public function update($model = null)
 	{
@@ -365,9 +309,7 @@ abstract class HalApiResourceController extends HalApiController
 	}
 
 	/**
-	 * @param $model
-	 * @return Response
-	 * @throws DatabaseConflictException
+	 * @inheritdoc
 	 */
 	public function destroy($model)
 	{

@@ -73,11 +73,12 @@ class RouteHelper implements RouteHelperConstants
 	 * @param string $name The resource's name (e.g. users).
 	 * @param string $controller The path to the controller handling the resource (e.g. UsersController::class or App\Http\Controllers\UsersController).
 	 * @param array $methods Array of CRUD methods which should be registered automatically.
+	 * @param bool $pagination
 	 * @return ResourceRoute
 	 */
-	public function resource($name, $controller, $methods = [self::INDEX, self::SHOW, self::STORE, self::UPDATE, self::DESTROY])
+	public function resource($name, $controller, $methods = [self::INDEX, self::SHOW, self::STORE, self::UPDATE, self::DESTROY], $pagination = true)
 	{
-		return new ResourceRoute($name, $controller, $this, $methods);
+		return new ResourceRoute($name, $controller, $this, $methods, $pagination);
 	}
 
 	/**

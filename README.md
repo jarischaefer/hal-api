@@ -2,7 +2,9 @@
 
 ## About
 
-This package is based on Laravel 5. It is designed to automate common tasks in RESTful API programming.
+This package is based on Laravel 5.
+It is designed to automate common tasks in RESTful API programming.
+These docs might not always be in sync with all the changes.
 
 ## Installation
 
@@ -14,45 +16,51 @@ Requires Laravel 5.1 and PHP 5.6+.
 
 Either require the package via Composer by issuing the following command
 
-> composer require jarischaefer/hal-api:dev-development
+> composer require jarischaefer/hal-api:dev-master
 
 or by including the following in your composer.json.
 
 ```json
 "require": {
-	"jarischaefer/hal-api": "dev-development"
+	"jarischaefer/hal-api": "dev-master"
 }
 ```
-This is going to install the development version.
+This is going to install the more stable master version.
 
 ### Service Provider
+
+#### app.php
 
 Register the Service Provider in your config/app.php file.
 ```php
 'providers' => [
-
 	Jarischaefer\HalApi\Providers\HalApiServiceProvider::class,
-
 ]
 ```
+
+#### compile.php (optional step)
+
+Register the Service Provider in your config/compile.php file.
+```php
+'providers' => [
+	Jarischaefer\HalApi\Providers\HalApiServiceProvider::class,
+]
+```
+The next time you generate an optimized classloader using artisan,
+the optimized file will contain the contents of this package as well.
 
 ## Examples
 
 #### Models
 
-The following is a simple relationship with three tables. The user has two One-To-Many relationships with both Posts and Comments.
+The following is a simple relationship with three tables.
+The user has two One-To-Many relationships with both Posts and Comments.
 
 ```php
-class User extends Model implements AuthenticatableContract, CanResetPasswordContract {
+class User extends Model implements AuthenticatableContract, CanResetPasswordContract
+{
 
 	use Authenticatable, CanResetPassword;
-
-	/**
-	 * The database table used by the model.
-	 *
-	 * @var string
-	 */
-	protected $table = 'users';
 
 	/**
 	 * The attributes excluded from the model's JSON form.
@@ -107,15 +115,10 @@ They help you create a HAL response for either a single item or a collection of 
 class UserTransformer extends HalApiTransformer
 {
 
-	private $routeUsersShow;
-	
-	public function __construct()
-	{
-		$this->routeUsersShow = RouteHelper::byAction(UsersController::actionName(RouteHelper::SHOW));
-	}
-
 	public function transform(Model $model)
 	{
+		/** @var User $model */
+
 		return [
 			'id' => (int)$model->id,
 			'username' => (string)$model->username,
@@ -126,40 +129,15 @@ class UserTransformer extends HalApiTransformer
 		];
 	}
 
-	protected function getSelf(Model $model)
-	{
-		return HalApiLink::make($this->routeUsersShow, $model->id); // Defines the link to the current user (e.g. /users/123)
-	}
-
-	protected function getParent(Model $model)
-	{
-		return HalApiLink::make(RouteHelper::parent($this->routeUsersShow)); // Defines the link to the current user's parent (e.g. /users/123 -> /users)
-	}
-
-	protected function getLinks(Model $model)
-	{
-		return [];
-	}
-
-	protected function getEmbedded(Model $model)
-	{
-		return [];
-	}
-
 }
 
 class PostTransformer extends HalApiTransformer
 {
 
-	private $routePostsShow;
-	
-	public function __construct()
-	{
-		$this->routePostsShow = RouteHelper::byAction(PostsController::actionName(RouteHelper::SHOW));
-	}
-
 	public function transform(Model $model)
 	{
+		/** @var Post $model */
+
 		return [
 			'id' => (int)$this->model->id,
 			'title' => (string)$this->model->title,
@@ -167,28 +145,8 @@ class PostTransformer extends HalApiTransformer
 			'user_id' => (int)$this->model->user_id,
 		];
 	}
-	
-	protected function getSelf(Model $model)
-	{
-		return HalApiLink::make($this->routePostsShow, $model->id); // Defines the link to the current post (e.g. /posts/123)
-	}
 
-	protected function getParent(Model $model)
-	{
-		return HalApiLink::make(RouteHelper::parent($this->routePostsShow)); // Defines the link to the current posts's parent (e.g. /posts/123 -> /posts)
-	}
-
-	protected function getLinks(Model $model)
-	{
-		return [];
-	}
-
-	protected function getEmbedded(Model $model)
-	{
-		return [];
-	}
-
-} 
+}
 ```
 
 #### Controller
@@ -199,7 +157,9 @@ class HomeController extends HalApiController
 
 	public function index()
 	{
-		return $this->createResponse()->build(); // Simply return the API
+		return $this->responseFactory->json(
+			$this->createResponse()->build() // Simply return the API
+		);
 	}
 
 }
@@ -218,62 +178,63 @@ class UsersController extends HalApiResourceController
 	const RELATION = 'users';
 
 	/**
-	 * @var HalApiTransformer
+	 * @var HalApiTransformerContract
 	 */
 	private $postTransformer;
 	/**
-	 * @var HalApiTransformer
+	 * @var HalApiTransformerContract
 	 */
 	private $commentTransformer;
 
-	/**
-	 * {@inheritdoc}
-	 */
+	public static function getModel()
+	{
+		return User::class;
+	}
+
+	public static function getRelation($action = null)
+	{
+		return $action ? self::RELATION . '.' . $action : self::RELATION;
+	}
+
 	protected function boot()
 	{
 		parent::boot();
 
+		$postShow = $this->routeHelper->byAction(PostsController::actionName(RouteHelper::SHOW));
+		$postParent = $this->routeHelper->parent($postShow);
+
+		$commentShow = $this->routeHelper->byAction(CommentsController::actionName(RouteHelper::SHOW));
+		$commentParent = $this->routeHelper->parent($commentShow);
+
 		// Additional transformers used for relationships
-		$this->postTransformer = new PostTransformer;
-		$this->commentTransformer = new CommentTransformer;
+		$this->postTransformer = $this->transformerFactory->create(PostTransformer::class, $postShow, $postParent);
+		$this->commentTransformer = $this->transformerFactory->create(CommentTransformer::class, $commentShow, $commentParent);
 	}
 
 	public function posts(User $user)
 	{
 		$posts = $user->posts()->paginate($this->perPage);
+		/** @var PostsController $postsController */
+		$postsController = $this->application->make(PostsController::class);
 
-		return PostsController::make()->paginate($posts)->build();
+		return $this->responseFactory->json($postsController->paginate($posts)->build());
 	}
 
 	public function comments(User $user)
 	{
 		$comments = $user->comments()->paginate($this->perPage);
+		/** @var CommentsController $commentsController */
+		$commentsController = $this->application->make(CommentsController::class);
 
-		return CommentsController::make()->paginate($comments)->build();
+		return $this->responseFactory->json($commentsController->paginate($comments)->build());
 	}
-	
-	/**
-	 * {@inheritdoc}
-	 */
+
 	protected function getTransformer()
 	{
-		return new UserTransformer;
-	}
+		$self = $this->routeHelper->byAction(static::actionName(RouteHelper::SHOW));
+		$parent = $this->routeHelper->parent($self);
 
-	/**
-	 * {@inheritdoc}
-	 */
-	protected function getModel()
-	{
-		return User::class;
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public static function getRelation($action = null)
-	{
-		return $action ? self::RELATION . '.' . $action : self::RELATION;
+		return $this->transformerFactory->create(UserTransformer::class, $self, $parent);
 	}
 
 }
@@ -283,28 +244,22 @@ class PostsController extends HalApiResourceController
 
 	const RELATION = 'posts';
 
-	/**
-	 * {@inheritdoc}
-	 */
-	protected function getTransformer()
-	{
-		return new PostTransformer;
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	protected function getModel()
+	public static function getModel()
 	{
 		return Post::class;
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
 	public static function getRelation($action = null)
 	{
 		return $action ? self::RELATION . '.' . $action : self::RELATION;
+	}
+
+	protected function getTransformer()
+	{
+		$self = $this->routeHelper->byAction(static::actionName(RouteHelper::SHOW));
+		$parent = $this->routeHelper->parent($self);
+
+		return $this->transformerFactory->create(PostTransformer::class, $self, $parent);
 	}
 
 }
@@ -314,28 +269,22 @@ class CommentsController extends HalApiResourceController
 
 	const RELATION = 'comments';
 
-	/**
-	 * {@inheritdoc}
-	 */
-	protected function getTransformer()
-	{
-		return new CommentTransformer;
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	protected function getModel()
+	public static function getModel()
 	{
 		return Comment::class;
 	}
 
-	/**
-	 * {@inheritdoc}
-	 */
 	public static function getRelation($action = null)
 	{
 		return $action ? self::RELATION . '.' . $action : self::RELATION;
+	}
+
+	protected function getTransformer()
+	{
+		$self = $this->routeHelper->byAction(static::actionName(RouteHelper::SHOW));
+		$parent = $this->routeHelper->parent($self);
+
+		return $this->transformerFactory->create(CommentTransformer::class, $self, $parent);
 	}
 
 }
@@ -346,18 +295,18 @@ class CommentsController extends HalApiResourceController
 ```php
 RouteHelper::make($router)
 	->get('/', HomeController::class, 'index') // Link GET / to the index method in HomeController
-		
+
 	->resource('users', UsersController::class) // Start a new resource block
 		->get('posts', 'posts') // Link GET /users/{users}/posts to the posts method in UsersController
 		->get('comments', 'comments') // Links GET /users/{users}/comments to the comments method in UsersController
 	->done() // Close the resource block
-		
+
 	->resource('posts', PostsController::class)
 	->done()
 
 	->resource('comments', CommentsController::class)
 	->done()
-	
+
 ```
 
 #### RouteServiceProvider
@@ -493,7 +442,7 @@ The example above would yield the following result for a user with user id 123.
 		}
 	},
 	"_embedded": {
-	
+
 	}
 }
 ```
@@ -595,7 +544,7 @@ The following is an index. It contains multiple models inside the _embedded fiel
 					}
 				},
 				"_embedded": {
-				
+
 				}
 			},
 			{
@@ -638,7 +587,7 @@ The following is an index. It contains multiple models inside the _embedded fiel
 					}
 				},
 				"_embedded": {
-				
+
 				}
 			}
 		]
@@ -648,10 +597,10 @@ The following is an index. It contains multiple models inside the _embedded fiel
 
 ## Contributing
 
-Feel free to contribute anytime. Take a look at the [Laravel Docs](http://laravel.com/docs/master/packages) regarding package development first. Laravel 5 is still under development as of January 2015, so the docs might not be up to date.
+Feel free to contribute anytime.
+Take a look at the [Laravel Docs](http://laravel.com/docs/master/packages) regarding package development first.
 Once you've made some changes, push them to a new branch and start a pull request.
 
 ## License
 
 This project is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT).
-

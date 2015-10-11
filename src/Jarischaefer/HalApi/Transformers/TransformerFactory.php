@@ -14,7 +14,7 @@ interface TransformerFactory
 	 * @param Route $self
 	 * @param Route $parent
 	 * @param array $arguments
-	 * @return HalApiTransformer
+	 * @return HalApiTransformerContract
 	 */
 	public function create($class, Route $self, Route $parent, array $arguments = []);
 

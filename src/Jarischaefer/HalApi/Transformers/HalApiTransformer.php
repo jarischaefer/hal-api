@@ -3,17 +3,16 @@
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Routing\Route;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
-use Jarischaefer\HalApi\Representations\HalApiRepresentationImpl;
 use Jarischaefer\HalApi\Representations\RepresentationFactory;
 use Jarischaefer\HalApi\Routing\HalApiLink;
 use Jarischaefer\HalApi\Helpers\Checks;
 use Jarischaefer\HalApi\Routing\LinkFactory;
 
 /**
- * Class HalTransformer
+ * Class HalApiTransformer
  * @package Jarischaefer\HalApi\Transformers
  */
-abstract class HalApiTransformer
+abstract class HalApiTransformer implements HalApiTransformerContract
 {
 
 	/**
@@ -54,10 +53,7 @@ abstract class HalApiTransformer
 	}
 
 	/**
-	 * Transforms the model into a Hal response. This includes the model's data and all its relations and embedded data.
-	 *
-	 * @param Model $model
-	 * @return HalApiRepresentationImpl
+	 * @inheritdoc
 	 */
 	public final function item(Model $model)
 	{
@@ -74,10 +70,7 @@ abstract class HalApiTransformer
 	}
 
 	/**
-	 * Transforms multiple models into Hal responses. This includes the model's data and all its relations and embedded data.
-	 *
-	 * @param array $collection
-	 * @return array
+	 * @inheritdoc
 	 */
 	public function collection(array $collection)
 	{
@@ -91,12 +84,6 @@ abstract class HalApiTransformer
 
 		return $elements;
 	}
-
-	/**
-	 * @param Model $model
-	 * @return mixed
-	 */
-	abstract public function transform(Model $model);
 
 	/**
 	 * @param Model $model

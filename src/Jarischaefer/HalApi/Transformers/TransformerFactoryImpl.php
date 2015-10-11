@@ -50,8 +50,8 @@ class TransformerFactoryImpl implements TransformerFactory
 	 */
 	public function create($class, Route $self, Route $parent, array $arguments = [])
 	{
-		if (!is_subclass_of($class, HalApiTransformer::class)) {
-			throw new InvalidArgumentException('Class must be a subclass of ' . HalApiTransformer::class);
+		if (!is_subclass_of($class, HalApiTransformerContract::class)) {
+			throw new InvalidArgumentException('Class must implement ' . HalApiTransformerContract::class);
 		}
 
 		$parameters = array_merge([

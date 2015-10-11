@@ -2,6 +2,10 @@
 
 use Exception;
 
+/**
+ * Class BadPostRequestException
+ * @package Jarischaefer\HalApi\Exceptions
+ */
 class BadPostRequestException extends Exception
 {
 

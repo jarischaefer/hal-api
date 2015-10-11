@@ -1,10 +1,12 @@
-<?php namespace Jarischaefer\HalApi;
+<?php namespace Jarischaefer\HalApi\Representations;
+
+use Jarischaefer\HalApi\Routing\HalApiLink;
 
 /**
- * Interface HalApiContract
- * @package Jarischaefer\HalApi
+ * Interface HalApiRepresentation
+ * @package Jarischaefer\HalApi\Representations
  */
-interface HalApiContract
+interface HalApiRepresentation
 {
 
 	/**
@@ -36,18 +38,18 @@ interface HalApiContract
 	/**
 	 * Adds a link targeting the current resource.
 	 *
-	 * @param HalLink $self
+	 * @param HalApiLink $self
 	 * @return $this
 	 */
-	public function self(HalLink $self);
+	public function self(HalApiLink $self);
 
 	/**
 	 * Adds a link targeting the current resource's parent.
 	 *
-	 * @param HalLink $parent
+	 * @param HalApiLink $parent
 	 * @return $this
 	 */
-	public function parent(HalLink $parent);
+	public function parent(HalApiLink $parent);
 
 	/**
 	 * Adds metadata (e.g. pagination info) to the API.
@@ -87,10 +89,10 @@ interface HalApiContract
 	 * Adds a link. Existing relations will be overwritten.
 	 *
 	 * @param $relation
-	 * @param HalLink $link
+	 * @param HalApiLink $link
 	 * @return $this
 	 */
-	public function link($relation, HalLink $link);
+	public function link($relation, HalApiLink $link);
 
 	/**
 	 * Adds multiple links. Existing relations will be overwritten.
@@ -102,12 +104,23 @@ interface HalApiContract
 
 	/**
 	 * Embeds a sub-API element to the current API's _embedded field. Existing relations will be overwritten.
+	 * This method is supposed to be used for relations containing only one element.
 	 *
 	 * @param $relation
-	 * @param HalApiContract $api
+	 * @param HalApiRepresentation $api
 	 * @return $this
 	 */
-	public function embed($relation, HalApiContract $api);
+	public function embedSingle($relation, HalApiRepresentation $api);
+
+	/**
+	 * Embeds a sub-API element to the current API's _embedded field. Existing relations will be overwritten.
+	 * This method is supposed to be used for relations containing multiple elements.
+	 *
+	 * @param string $relation
+	 * @param HalApiRepresentation $api
+	 * @return mixed
+	 */
+	public function embedMulti($relation, HalApiRepresentation $api);
 
 	/**
 	 * Embeds multiple sub-API elements to the current API's _embedded field.
@@ -132,12 +145,5 @@ interface HalApiContract
 	 * @return string
 	 */
 	public function __toString();
-
-	/**
-	 * Returns the API as an array.
-	 *
-	 * @return array
-	 */
-	public function toArray();
 
 }

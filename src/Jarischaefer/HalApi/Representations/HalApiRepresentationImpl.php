@@ -1,17 +1,18 @@
-<?php namespace Jarischaefer\HalApi;
+<?php namespace Jarischaefer\HalApi\Representations;
 
-use App;
-use Illuminate\Routing\Route;
 use InvalidArgumentException;
+use Jarischaefer\HalApi\Controllers\HalApiController;
 use Jarischaefer\HalApi\Helpers\Checks;
-use Jarischaefer\HalApi\Routing\RouteHelper;
+use Jarischaefer\HalApi\Helpers\RouteHelper;
+use Jarischaefer\HalApi\Routing\HalApiLink;
+use Jarischaefer\HalApi\Routing\LinkFactory;
 use RuntimeException;
 
 /**
- * Class HalApi
- * @package Jarischaefer\HalApi
+ * Class HalApiRepresentationImpl
+ * @package Jarischaefer\HalApi\Representations
  */
-class HalApiElement implements HalApiContract
+class HalApiRepresentationImpl implements HalApiRepresentation
 {
 
 	/**
@@ -20,6 +21,14 @@ class HalApiElement implements HalApiContract
 	 * @var array
 	 */
 	private static $reservedApiKeys = ['data', 'meta', '_links', '_embedded'];
+	/**
+	 * @var LinkFactory
+	 */
+	private $linkFactory;
+	/**
+	 * @var RouteHelper
+	 */
+	private $routeHelper;
 	/**
 	 * @var array
 	 */
@@ -33,7 +42,7 @@ class HalApiElement implements HalApiContract
 	 */
 	private $data = [];
 	/**
-	 * @var array
+	 * @var HalApiLink[]
 	 */
 	private $links = [];
 	/**
@@ -47,23 +56,21 @@ class HalApiElement implements HalApiContract
 	 */
 	private $autoSubordinateRoutes = true;
 
-	public function __construct(HalLink $self = null, HalLink $parent = null)
+	/**
+	 * @param LinkFactory $linkFactory
+	 * @param RouteHelper $routeHelper
+	 * @param HalApiLink $self
+	 * @param HalApiLink $parent
+	 */
+	public function __construct(LinkFactory $linkFactory, RouteHelper $routeHelper, HalApiLink $self, HalApiLink $parent)
 	{
+		$this->linkFactory = $linkFactory;
+		$this->routeHelper = $routeHelper;
 		$this->self($self)->parent($parent);
 	}
 
-    /**
-     * @param HalLink $self
-     * @param HalLink $parent
-     * @return HalApiElement
-     */
-    public static function make(HalLink $self = null, HalLink $parent = null)
-	{
-		return new static($self, $parent);
-	}
-
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function setAutoSubordinateRoutes($flag)
 	{
@@ -71,7 +78,7 @@ class HalApiElement implements HalApiContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function add($key, $value)
 	{
@@ -88,23 +95,23 @@ class HalApiElement implements HalApiContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
-	public function self(HalLink $self)
+	public function self(HalApiLink $self)
 	{
 		return $this->link(self::SELF, $self);
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
-	public function parent(HalLink $parent)
+	public function parent(HalApiLink $parent)
 	{
 		return $this->link(self::PARENT, $parent);
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function meta($key, $value)
 	{
@@ -114,7 +121,7 @@ class HalApiElement implements HalApiContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function metaFromArray(array $meta)
 	{
@@ -124,7 +131,7 @@ class HalApiElement implements HalApiContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function data($key, $value)
 	{
@@ -134,7 +141,7 @@ class HalApiElement implements HalApiContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function dataFromArray(array $data)
 	{
@@ -144,9 +151,9 @@ class HalApiElement implements HalApiContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
-	public function link($relation, HalLink $link)
+	public function link($relation, HalApiLink $link)
 	{
 		if (!is_string($relation)) {
 			throw new InvalidArgumentException('relation must be a string, got: ' . gettype($relation));
@@ -158,7 +165,7 @@ class HalApiElement implements HalApiContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function links(array $links)
 	{
@@ -174,9 +181,23 @@ class HalApiElement implements HalApiContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
-	public function embed($relation, HalApiContract $api)
+	public function embedSingle($relation, HalApiRepresentation $api)
+	{
+		if (!is_string($relation)) {
+			throw new InvalidArgumentException('relation must be a string');
+		}
+
+		$this->embedded[$relation] = $api;
+
+		return $this;
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function embedMulti($relation, HalApiRepresentation $api)
 	{
 		if (!is_string($relation)) {
 			throw new InvalidArgumentException('relation must be a string');
@@ -188,7 +209,7 @@ class HalApiElement implements HalApiContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function embedFromArray(array $embed)
 	{
@@ -196,54 +217,37 @@ class HalApiElement implements HalApiContract
 			return $this;
 		}
 
-		foreach ($embed as $relation => $items) {
-			Checks::arrayType($items, HalApiContract::class);
+		foreach ($embed as $relation => $item) {
+			if (is_array($item)) {
+				Checks::arrayType($item, HalApiRepresentation::class);
 
-			foreach ($items as $item) {
-				$this->embed($relation, $item);
+				foreach ($item as $api) {
+					$this->embedMulti($relation, $api);
+				}
+			} else {
+				$this->embedSingle($relation, $item);
 			}
 		}
 
 		return $this;
 	}
 
-	private function addSubordinateRoutes(HalLink $halLink)
+	/**
+	 * @param HalApiLink $link
+	 */
+	private function addSubordinateRoutes(HalApiLink $link)
 	{
-		$subordinateRoutes = RouteHelper::subordinates($halLink->getRoute());
+		$subordinateRoutes = $this->routeHelper->subordinates($link->getRoute());
 
-		/* @var Route $subRoute */
 		foreach ($subordinateRoutes as $subRoute) {
-			if (!self::isValidRoute($halLink->getRoute())) {
-				continue;
-			}
-
 			/* @var HalApiController $class */
 			list($class, $method) = explode('@', $subRoute->getActionName());
-			$this->link($class::getRelation($method), HalLink::make($subRoute, $halLink->getParameters()));
+			$this->link($class::getRelation($method), $this->linkFactory->create($subRoute, $link->getParameters()));
 		}
-	}
-
-	private static function isValidRoute(Route $route)
-	{
-		$actionName = $route->getActionName();
-
-		// valid routes are backed by a controller (e.g. App\Http\Controllers\MyController@doSomething)
-		if (!str_contains($actionName, '@')) {
-			return false;
-		}
-
-		$class = explode('@', $actionName)[0];
-
-		// only add a link if this class is its controller's parent
-		if (!is_subclass_of($class, HalApiController::class)) {
-			return false;
-		}
-
-		return true;
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function build()
 	{
@@ -254,7 +258,7 @@ class HalApiElement implements HalApiContract
 				throw new RuntimeException('relation for self is not defined, cannot add subordinate routes');
 			}
 
-			/* @var HalLink $self */
+			/** @var HalApiLink $self */
 			$self = $this->links[self::SELF];
 			$this->addSubordinateRoutes($self);
 		}
@@ -266,7 +270,6 @@ class HalApiElement implements HalApiContract
 			$build['data'] = $this->data;
 		}
 
-		/* @var HalLink $link */
 		foreach ($this->links as $relation => $link) {
 			$build['_links'][$relation] = $link->build();
 		}
@@ -274,9 +277,14 @@ class HalApiElement implements HalApiContract
 		$build['_embedded'] = [];
 
 		foreach ($this->embedded as $relation => $embedded) {
-			/* @var HalApiContract $item */
-			foreach ($embedded as $item) {
-				$build['_embedded'][$relation][] = $item->build();
+			if (is_array($embedded)) {
+				/* @var HalApiRepresentation $item */
+				foreach ($embedded as $item) {
+					$build['_embedded'][$relation][] = $item->build();
+				}
+			} else {
+				/** @var HalApiRepresentation $embedded */
+				$build['_embedded'][$relation] = $embedded->build();
 			}
 		}
 
@@ -284,19 +292,11 @@ class HalApiElement implements HalApiContract
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * @inheritdoc
 	 */
 	public function __toString()
 	{
 		return json_encode($this->build());
-	}
-
-	/**
-	 * {@inheritdoc}
-	 */
-	public function toArray()
-	{
-		return $this->build();
 	}
 
 }

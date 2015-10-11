@@ -1,33 +1,11 @@
-<?php namespace Jarischaefer\HalApi\Routing;
+<?php namespace Jarischaefer\HalApi\Helpers;
 
 /**
  * Class ResourceRoute
- * @package Jarischaefer\HalApi\Routing
+ * @package Jarischaefer\HalApi\Helpers
  */
-class ResourceRoute
+class ResourceRoute implements RouteHelperConstants
 {
-
-	/**
-	 * Method name for GET requests that list all resources (possibly paginated).
-	 */
-	const INDEX = RouteHelper::INDEX;
-	/**
-	 * Method name for GET requests that request a specific resource.
-	 */
-	const SHOW = RouteHelper::SHOW;
-	/**
-	 * Method name for POST requests that create a new resource.
-	 */
-	const STORE = RouteHelper::STORE;
-	/**
-	 * Method name for PUT and PATCH requests that either create or fully update (PUT)
-	 * or partially update (PATCH) a resource.
-	 */
-	const UPDATE = RouteHelper::UPDATE;
-	/**
-	 * Method name for DELETE requests that delete an existing resource.
-	 */
-	const DESTROY = RouteHelper::DESTROY;
 
 	/**
 	 * The resource's name. Should be named like the underlying model's name in plural
@@ -51,6 +29,10 @@ class ResourceRoute
 	 */
 	private $routeHelper;
 	/**
+	 * @var bool
+	 */
+	private $pagination;
+	/**
 	 * An array of methods (see INDEX, SHOW, ... consts in this class) for which routes shall be
 	 * generated automatically. By default, all CRUD methods are available.
 	 *
@@ -59,29 +41,19 @@ class ResourceRoute
 	private $methods;
 
 	/**
-	 * @param $name
-	 * @param $controller
+	 * @param string $name
+	 * @param string $controller
 	 * @param RouteHelper $routeHelper
-	 * @param $methods
+	 * @param array $methods
+	 * @param bool $pagination
 	 */
-	public function __construct($name, $controller, RouteHelper $routeHelper, $methods = [self::INDEX, self::SHOW, self::STORE, self::UPDATE, self::DESTROY])
+	public function __construct($name, $controller, RouteHelper $routeHelper, $methods = [self::INDEX, self::SHOW, self::STORE, self::UPDATE, self::DESTROY], $pagination = true)
 	{
 		$this->name = (string)$name;
 		$this->controller = (string)$controller;
 		$this->routeHelper = $routeHelper;
+		$this->pagination = $pagination;
 		$this->methods = is_array($methods) ? $methods : [$methods];
-	}
-
-	/**
-	 * @param $name
-	 * @param $controller
-	 * @param RouteHelper $routeHelper
-	 * @param array $methods
-	 * @return ResourceRoute
-	 */
-	public static function make($name, $controller, RouteHelper $routeHelper, $methods = [self::INDEX, self::SHOW, self::STORE, self::UPDATE, self::DESTROY])
-	{
-		return new self($name, $controller, $routeHelper, $methods);
 	}
 
 	/**
@@ -155,18 +127,6 @@ class ResourceRoute
 	public function delete($uri, $method)
 	{
 		$this->routeHelper->delete($this->name . '/{' . $this->name . '}/' . $uri, $this->controller, $method);
-
-		return $this;
-	}
-
-	/**
-	 * Adds a pagination route to the current resource.
-	 *
-	 * @return $this
-	 */
-	public function pagination()
-	{
-		$this->routeHelper->pagination($this->name, $this->controller, self::INDEX);
 
 		return $this;
 	}
@@ -256,6 +216,10 @@ class ResourceRoute
 	{
 		if (in_array(self::INDEX, $this->methods)) {
 			$this->routeHelper->get($this->name, $this->controller, self::INDEX);
+
+			if ($this->pagination) {
+				$this->routeHelper->pagination($this->name, $this->controller, self::INDEX);
+			}
 		}
 		if (in_array(self::SHOW, $this->methods)) {
 			$this->routeHelper->get($this->name . '/{' . $this->name . '}', $this->controller, self::SHOW);

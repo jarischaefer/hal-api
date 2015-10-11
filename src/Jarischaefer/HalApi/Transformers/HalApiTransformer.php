@@ -7,6 +7,7 @@ use Jarischaefer\HalApi\Representations\RepresentationFactory;
 use Jarischaefer\HalApi\Routing\HalApiLink;
 use Jarischaefer\HalApi\Helpers\Checks;
 use Jarischaefer\HalApi\Routing\LinkFactory;
+use ReflectionMethod;
 
 /**
  * Class HalApiTransformer
@@ -15,6 +16,10 @@ use Jarischaefer\HalApi\Routing\LinkFactory;
 abstract class HalApiTransformer implements HalApiTransformerContract
 {
 
+	/**
+	 * @var HalApiLink
+	 */
+	protected static $staticParent = null;
 	/**
 	 * @var LinkFactory
 	 */
@@ -50,6 +55,14 @@ abstract class HalApiTransformer implements HalApiTransformerContract
 		$this->routeHelper = $routeHelper;
 		$this->self = $self;
 		$this->parent = $parent;
+
+		if (static::$staticParent === null) {
+			$method = new ReflectionMethod(static::class, 'getParent');
+
+			if (strcmp(self::class, $method->getDeclaringClass()->getName()) === 0) {
+				static::$staticParent = $this->linkFactory->create($this->parent);
+			}
+		}
 	}
 
 	/**
@@ -74,8 +87,6 @@ abstract class HalApiTransformer implements HalApiTransformerContract
 	 */
 	public function collection(array $collection)
 	{
-		Checks::arrayType($collection, Model::class);
-
 		$elements = [];
 
 		foreach ($collection as $model) {
@@ -100,7 +111,7 @@ abstract class HalApiTransformer implements HalApiTransformerContract
 	 */
 	protected function getParent(Model $model)
 	{
-		return $this->linkFactory->create($this->parent);
+		return static::$staticParent ?: $this->linkFactory->create($this->parent);
 	}
 
 	/**

@@ -39,22 +39,26 @@ class TransformerFactoryImplTest extends TestCase
 		$parent = new Route(['GET'], '/', ['bar']);
 
 		$urlGenerator = $this->app->make(UrlGenerator::class);
-		$linkFactory = $this->app->make(LinkFactory::class);
 		$representationFactory = $this->app->make(RepresentationFactory::class);
-		$return = new TestingTransformer($linkFactory, $representationFactory, $this->routeHelper, $self, $parent);
+		/** @var LinkFactory $linkFactory */
+		$linkFactory = Mockery::mock(LinkFactory::class);
+		/** @var Application $applicationMock */
 		$applicationMock = Mockery::mock($this->app);
+
+		$linkFactory->shouldReceive('create')
+			->withArgs([$parent]);
 		$applicationMock->shouldReceive('make')
 			->withArgs(['url'])
 			->andReturn($urlGenerator);
+		$expected = new TestingTransformer($linkFactory, $representationFactory, $this->routeHelper, $self, $parent);
 		$applicationMock->shouldReceive('make')
 			->withArgs([TestingTransformer::class, [$linkFactory, $representationFactory, $this->routeHelper, $self, $parent, 123]])
-			->andReturn($return);
+			->andReturn($expected);
 
-		/** @var Application $applicationMock */
 		$factory = new TransformerFactoryImpl($applicationMock, $linkFactory, $representationFactory, $this->routeHelper);
 		$created = $factory->create(TestingTransformer::class, $self, $parent, [123]);
 
-		$this->assertEquals($return, $created);
+		$this->assertEquals($expected, $created);
 	}
 
 }

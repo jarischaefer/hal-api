@@ -19,7 +19,7 @@ abstract class HalApiTransformer implements HalApiTransformerContract
 	/**
 	 * @var HalApiLink
 	 */
-	protected static $staticParent = null;
+	protected static $staticParent = [];
 	/**
 	 * @var LinkFactory
 	 */
@@ -56,11 +56,11 @@ abstract class HalApiTransformer implements HalApiTransformerContract
 		$this->self = $self;
 		$this->parent = $parent;
 
-		if (static::$staticParent === null) {
+		if (!isset(static::$staticParent[static::class])) {
 			$method = new ReflectionMethod(static::class, 'getParent');
 
 			if (strcmp(self::class, $method->getDeclaringClass()->getName()) === 0) {
-				static::$staticParent = $this->linkFactory->create($this->parent);
+				static::$staticParent[static::class] = $this->linkFactory->create($this->parent);
 			}
 		}
 	}
@@ -111,7 +111,7 @@ abstract class HalApiTransformer implements HalApiTransformerContract
 	 */
 	protected function getParent(Model $model)
 	{
-		return static::$staticParent ?: $this->linkFactory->create($this->parent);
+		return isset(static::$staticParent[static::class]) ? static::$staticParent[static::class] : $this->linkFactory->create($this->parent);
 	}
 
 	/**

@@ -45,8 +45,6 @@ class TransformerFactoryImplTest extends TestCase
 		/** @var Application $applicationMock */
 		$applicationMock = Mockery::mock($this->app);
 
-		$linkFactory->shouldReceive('create')
-			->withArgs([$parent]);
 		$applicationMock->shouldReceive('make')
 			->withArgs(['url'])
 			->andReturn($urlGenerator);

@@ -1,9 +1,11 @@
-<?php namespace Jarischaefer\HalApi\Caching;
+<?php namespace Jarischaefer\HalApi\Middleware;
 
 use Closure;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
+use Jarischaefer\HalApi\Caching\CacheFactory;
+use Jarischaefer\HalApi\Caching\HalApiCache;
 use Jarischaefer\HalApi\Controllers\HalApiControllerContract;
 
 /**

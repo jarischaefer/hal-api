@@ -1,4 +1,4 @@
-<?php namespace Jarischaefer\HalApi\Caching;
+<?php namespace Jarischaefer\HalApi\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;

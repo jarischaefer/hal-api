@@ -6,8 +6,8 @@ use Jarischaefer\HalApi\Caching\CacheFactory;
 use Jarischaefer\HalApi\Caching\CacheFactoryImpl;
 use Jarischaefer\HalApi\Caching\HalApiCache;
 use Jarischaefer\HalApi\Caching\HalApiCacheImpl;
-use Jarischaefer\HalApi\Caching\HalApiCacheMiddleware;
-use Jarischaefer\HalApi\Caching\HalApiETagMiddleware;
+use Jarischaefer\HalApi\Middleware\HalApiCacheMiddleware;
+use Jarischaefer\HalApi\Middleware\HalApiETagMiddleware;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
 use Jarischaefer\HalApi\Representations\HalApiRepresentation;
 use Jarischaefer\HalApi\Representations\HalApiRepresentationImpl;
@@ -37,8 +37,6 @@ class HalApiServiceProvider extends ServiceProvider
 		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'CacheFactoryImpl.php',
 		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'HalApiCache.php',
 		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'HalApiCacheImpl.php',
-		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'HalApiCacheMiddleware.php',
-		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'HalApiETagMiddleware.php',
 
 		self::BASE_PATH . 'Controllers' . DIRECTORY_SEPARATOR . 'HalApiController.php',
 		self::BASE_PATH . 'Controllers' . DIRECTORY_SEPARATOR . 'HalApiControllerContract.php',
@@ -48,6 +46,9 @@ class HalApiServiceProvider extends ServiceProvider
 		self::BASE_PATH . 'Helpers' . DIRECTORY_SEPARATOR . 'RouteHelper.php',
 		self::BASE_PATH . 'Helpers' . DIRECTORY_SEPARATOR . 'RouteHelperConstants.php',
 		self::BASE_PATH . 'Helpers' . DIRECTORY_SEPARATOR . 'SafeIndexArray.php',
+
+		self::BASE_PATH . 'Middleware' . DIRECTORY_SEPARATOR . 'HalApiCacheMiddleware.php',
+		self::BASE_PATH . 'Middleware' . DIRECTORY_SEPARATOR . 'HalApiETagMiddleware.php',
 
 		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiRepresentation.php',
 		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiRepresentationImpl.php',

@@ -5,9 +5,7 @@ use Illuminate\Routing\Route;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
 use Jarischaefer\HalApi\Representations\RepresentationFactory;
 use Jarischaefer\HalApi\Routing\HalApiLink;
-use Jarischaefer\HalApi\Helpers\Checks;
 use Jarischaefer\HalApi\Routing\LinkFactory;
-use ReflectionMethod;
 
 /**
  * Class HalApiTransformer

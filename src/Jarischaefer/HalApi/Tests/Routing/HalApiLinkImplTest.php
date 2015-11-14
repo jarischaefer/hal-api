@@ -6,7 +6,7 @@ use Jarischaefer\HalApi\Routing\HalApiLinkImpl;
 use Jarischaefer\HalApi\Tests\TestCase;
 use Mockery;
 
-class HalApiLinkTest extends TestCase
+class HalApiLinkImplTest extends TestCase
 {
 
 	public function testGetLink()

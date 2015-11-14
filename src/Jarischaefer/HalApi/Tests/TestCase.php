@@ -1,6 +1,8 @@
 <?php namespace Jarischaefer\HalApi\Tests;
 
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Routing\Router;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
 
 abstract class TestCase extends \Illuminate\Foundation\Testing\TestCase
@@ -12,10 +14,6 @@ abstract class TestCase extends \Illuminate\Foundation\Testing\TestCase
 	 * @var string
 	 */
 	protected $baseUrl = 'http://localhost';
-	/**
-	 * @var RouteHelper
-	 */
-	protected $routeHelper;
 
 	/**
 	 * Creates the application.
@@ -37,8 +35,31 @@ abstract class TestCase extends \Illuminate\Foundation\Testing\TestCase
 	public function setUp()
 	{
 		parent::setUp();
+	}
 
-		$this->routeHelper = $this->app->make(RouteHelper::class);
+	/**
+	 * @return Router
+	 */
+	protected function createRouter()
+	{
+		/** @var Dispatcher $dispatcher */
+		$dispatcher = $this->getMock(Dispatcher::class);
+		$router = new Router($dispatcher, null);
+
+		return $router;
+	}
+
+	/**
+	 * @param Router|null $router
+	 * @return RouteHelper
+	 */
+	protected function createRouteHelper(Router $router = null)
+	{
+		if ($router === null) {
+			$router = $this->createRouter();
+		}
+
+		return RouteHelper::make($router);
 	}
 
 }

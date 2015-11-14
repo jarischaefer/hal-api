@@ -45,15 +45,17 @@ class TransformerFactoryImplTest extends TestCase
 		/** @var Application $applicationMock */
 		$applicationMock = Mockery::mock($this->app);
 
+		$routeHelper = $this->createRouteHelper();
+
 		$applicationMock->shouldReceive('make')
 			->withArgs(['url'])
 			->andReturn($urlGenerator);
-		$expected = new TestingTransformer($linkFactory, $representationFactory, $this->routeHelper, $self, $parent);
+		$expected = new TestingTransformer($linkFactory, $representationFactory, $routeHelper, $self, $parent);
 		$applicationMock->shouldReceive('make')
-			->withArgs([TestingTransformer::class, [$linkFactory, $representationFactory, $this->routeHelper, $self, $parent, 123]])
+			->withArgs([TestingTransformer::class, [$linkFactory, $representationFactory, $routeHelper, $self, $parent, 123]])
 			->andReturn($expected);
 
-		$factory = new TransformerFactoryImpl($applicationMock, $linkFactory, $representationFactory, $this->routeHelper);
+		$factory = new TransformerFactoryImpl($applicationMock, $linkFactory, $representationFactory, $routeHelper);
 		$created = $factory->create(TestingTransformer::class, $self, $parent, [123]);
 
 		$this->assertEquals($expected, $created);

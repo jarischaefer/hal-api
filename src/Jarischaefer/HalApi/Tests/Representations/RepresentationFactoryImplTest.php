@@ -13,16 +13,15 @@ class RepresentationFactoryImplTest extends TestCase
 
 	public function testCreate()
 	{
+		/** @var UrlGenerator $urlGenerator */
 		$urlGenerator = Mockery::mock(UrlGenerator::class);
-		/** @var UrLGenerator $urlGenerator */
 		$linkFactory = new LinkFactoryImpl($urlGenerator);
+		/** @var HalApiLink $self */
 		$self = Mockery::mock(HalApiLink::class);
+		/** @var HalApiLink $parent */
 		$parent = Mockery::mock(HalApiLink::class);
-		/**
-		 * @var HalApiLink $self
-		 * @var HalApiLink $parent
-		 */
-		$factory = new RepresentationFactoryImpl($linkFactory, $this->routeHelper);
+
+		$factory = new RepresentationFactoryImpl($linkFactory, $this->createRouteHelper());
 		$representation = $factory->create($self, $parent);
 
 		$this->assertInstanceOf(HalApiRepresentation::class, $representation);

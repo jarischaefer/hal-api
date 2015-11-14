@@ -12,7 +12,7 @@ class ResourceRouteTest extends TestCase
 
 	private function assertRoute(RouteCollection $routes, $uri, $httpMethod, $actionName)
 	{
-		/* @var Route $route */
+		/** @var Route $route */
 		foreach ($routes as $route) {
 			if ($route->getUri() == $uri && in_array($httpMethod, $route->getMethods()) && $route->getActionName() == $actionName) {
 				return true;

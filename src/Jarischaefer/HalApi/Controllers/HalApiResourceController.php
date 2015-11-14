@@ -259,7 +259,7 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	 */
 	public function update($model = null)
 	{
-		/* @var Model $model */
+		/** @var Model $model */
 		if ($model == null) {
 			$model = new $this->model;
 		}
@@ -313,7 +313,7 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	public function destroy($model)
 	{
 		try {
-			/* @var Model $model */
+			/** @var Model $model */
 			$model->delete();
 		} catch (Exception $e) {
 			throw new DatabaseConflictException('Model could not be deleted: ' . $model->getKey());

@@ -30,7 +30,7 @@ class RouteHelperTest extends TestCase
 		$routes = $helper->getRouter()->getRoutes();
 
 		$found = false;
-		/* @var Route $route */
+		/** @var Route $route */
 		foreach ($routes as $route) {
 			if ($route->getUri() == 'test?' . RouteHelper::PAGINATION_URI) {
 				$found = true;

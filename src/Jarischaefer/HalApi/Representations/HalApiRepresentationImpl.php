@@ -225,7 +225,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 		$subordinateRoutes = $this->routeHelper->subordinates($link->getRoute());
 
 		foreach ($subordinateRoutes as $subRoute) {
-			/* @var HalApiController $class */
+			/** @var HalApiController $class */
 			list($class, $method) = explode('@', $subRoute->getActionName());
 			$this->link($class::getRelation($method), $this->linkFactory->create($subRoute, $link->getParameters()));
 		}
@@ -263,7 +263,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 
 		foreach ($this->embedded as $relation => $embedded) {
 			if (is_array($embedded)) {
-				/* @var HalApiRepresentation $item */
+				/** @var HalApiRepresentation $item */
 				foreach ($embedded as $item) {
 					$build['_embedded'][$relation][] = $item->build();
 				}

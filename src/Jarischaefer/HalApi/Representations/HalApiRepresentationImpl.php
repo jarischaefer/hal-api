@@ -66,7 +66,8 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	{
 		$this->linkFactory = $linkFactory;
 		$this->routeHelper = $routeHelper;
-		$this->self($self)->parent($parent);
+		$this->link(self::SELF, $self);
+		$this->link(self::PARENT, $self);
 	}
 
 	/**
@@ -92,22 +93,6 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 		$this->root[$key] = $value;
 
 		return $this;
-	}
-
-	/**
-	 * @inheritdoc
-	 */
-	public function self(HalApiLink $self)
-	{
-		return $this->link(self::SELF, $self);
-	}
-
-	/**
-	 * @inheritdoc
-	 */
-	public function parent(HalApiLink $parent)
-	{
-		return $this->link(self::PARENT, $parent);
 	}
 
 	/**

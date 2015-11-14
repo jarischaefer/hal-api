@@ -36,22 +36,6 @@ interface HalApiRepresentation
 	public function add($key, $value);
 
 	/**
-	 * Adds a link targeting the current resource.
-	 *
-	 * @param HalApiLink $self
-	 * @return $this
-	 */
-	public function self(HalApiLink $self);
-
-	/**
-	 * Adds a link targeting the current resource's parent.
-	 *
-	 * @param HalApiLink $parent
-	 * @return $this
-	 */
-	public function parent(HalApiLink $parent);
-
-	/**
 	 * Adds metadata (e.g. pagination info) to the API.
 	 *
 	 * @param $key

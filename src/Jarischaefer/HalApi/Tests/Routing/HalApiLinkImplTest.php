@@ -91,6 +91,11 @@ class HalApiLinkImplTest extends TestCase
 	{
 		$urlGenerator = Mockery::mock(UrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
+			->once()
+			->with('Foo\Bar\Controllers\TestController@doSomething')
+			->andReturn('/parameters');
+
+		$urlGenerator->shouldReceive('action')
 			->atLeast($this->once())
 			->with('Foo\Bar\Controllers\TestController@doSomething', [])
 			->andReturn('/parameters');
@@ -100,6 +105,21 @@ class HalApiLinkImplTest extends TestCase
 		$link = new HalApiLinkImpl($urlGenerator, $route, [], '?bar=test');
 
 		$this->assertFalse($link->isTemplated());
+	}
+
+	public function testIsTemplatedQueryString()
+	{
+		$urlGenerator = Mockery::mock(UrlGenerator::class);
+		$urlGenerator->shouldReceive('action')
+			->atLeast($this->once())
+			->with('Foo\Bar\Controllers\TestController@doSomething', ['page' => 10])
+			->andReturn('/parameters');
+
+		/** @var UrlGenerator $urlGenerator */
+		$route = new Route(['GET'], '/parameters?page={page}', ['controller' => 'Foo\Bar\Controllers\TestController@doSomething']);
+		$link = new HalApiLinkImpl($urlGenerator, $route, ['page' => 10], '?bar=test');
+
+		$this->assertTrue($link->isTemplated());
 	}
 
 	public function testBuild()

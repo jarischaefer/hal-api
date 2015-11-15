@@ -11,10 +11,6 @@ class HalApiLinkImpl implements HalApiLink
 {
 
 	/**
-	 * @var UrlGenerator
-	 */
-	private $urlGenerator;
-	/**
 	 * @var Route
 	 */
 	private $route;
@@ -43,12 +39,11 @@ class HalApiLinkImpl implements HalApiLink
 	 */
 	public function __construct(UrlGenerator $urlGenerator, Route $route, $parameters = [], $queryString = '')
 	{
-		$this->urlGenerator = $urlGenerator;
 		$this->route = $route;
 		$this->parameters = is_array($parameters) ? $parameters : [$parameters];
-		$this->templated = count($this->route->parameterNames()) > 0 ? true : false;
 		$this->queryString = self::createQueryString($queryString);
-		$this->link = $this->urlGenerator->action($this->route->getActionName(), $this->templated ? $this->parameters : []);
+		$this->templated = self::evaluateTemplated($route, $urlGenerator, $queryString);
+		$this->link = $urlGenerator->action($this->route->getActionName(), $this->templated ? $this->parameters : []);
 
 		if (!empty($this->queryString)) {
 			$this->link .= '?' . $this->queryString;
@@ -115,6 +110,34 @@ class HalApiLinkImpl implements HalApiLink
 	public function __toString()
 	{
 		return json_encode($this->build());
+	}
+
+	/**
+	 * @param Route $route
+	 * @param UrlGenerator $urlGenerator
+	 * @param $queryString
+	 * @return bool
+	 */
+	private static function evaluateTemplated(Route $route, UrlGenerator $urlGenerator, $queryString)
+	{
+		// Does the route have named parameters? http://example.com/users/{users}
+		if (count($route->parameterNames())) {
+			return true;
+		}
+
+		$url = rawurldecode($urlGenerator->action($route->getActionName()));
+
+		// Does the route's URI already contain a query string? http://example.com/users?page={page}&per_page={per_page}
+		if (preg_match('/\?.*=\{.*?\}/', $url)) {
+			return true;
+		}
+
+		// Does the query string contain any parameters?
+		if (preg_match('/\?.*=\{.*?\}/', $queryString)) {
+			return true;
+		}
+
+		return false;
 	}
 
 	/**

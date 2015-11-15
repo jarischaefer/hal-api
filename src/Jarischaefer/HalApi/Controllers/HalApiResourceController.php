@@ -16,6 +16,7 @@ use Jarischaefer\HalApi\Representations\RepresentationFactory;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
 use Jarischaefer\HalApi\Routing\LinkFactory;
 use Jarischaefer\HalApi\Transformers\HalApiTransformer;
+use Jarischaefer\HalApi\Transformers\HalApiTransformerContract;
 use Jarischaefer\HalApi\Transformers\TransformerFactory;
 use RuntimeException;
 use Schema;
@@ -43,10 +44,6 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	const PAGINATION_DEFAULT_ITEMS_PER_PAGE = 10;
 
 	/**
-	 * @var TransformerFactory
-	 */
-	protected $transformerFactory;
-	/**
 	 * The model's transformer.
 	 *
 	 * @var HalApiTransformer
@@ -72,36 +69,22 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	protected $perPage;
 
 	/**
-	 * Returns an instance of a transformer to be used for all transformations in this controller.
-	 *
-	 * @return HalApiTransformer
+	 * @param HalApiControllerParameters $parameters
+	 * @param HalApiTransformer $transformer
 	 */
-	abstract protected function getTransformer();
-
-	/**
-	 * @param Application $app
-	 * @param Request $request
-	 * @param LinkFactory $linkFactory
-	 * @param RepresentationFactory $representationFactory
-	 * @param RouteHelper $routeHelper
-	 * @param TransformerFactory $transformerFactory
-	 * @param ResponseFactory $responseFactory
-	 */
-	public function __construct(Application $app, Request $request, LinkFactory $linkFactory, RepresentationFactory $representationFactory, RouteHelper $routeHelper, TransformerFactory $transformerFactory, ResponseFactory $responseFactory)
+	public function __construct(HalApiControllerParameters $parameters, HalApiTransformer $transformer)
 	{
-		parent::__construct($app, $request, $linkFactory, $representationFactory, $routeHelper, $responseFactory);
-
-		$this->transformerFactory = $transformerFactory;
+		parent::__construct($parameters);
 
 		if ($this->app->runningInConsole() && !$this->app->runningUnitTests()) {
 			return;
 		}
 
-		$this->transformer = $this->getTransformer();
+		$this->transformer = $transformer;
 		$this->model = static::getModel();
 
-		if (!is_subclass_of($this->transformer, HalApiTransformer::class)) {
-			throw new RuntimeException('Transformer must be child of ' . HalApiTransformer::class);
+		if (!is_subclass_of($this->transformer, HalApiTransformerContract::class)) {
+			throw new RuntimeException('Transformer must be child of ' . HalApiTransformerContract::class);
 		}
 
 		if (!is_subclass_of($this->model, Model::class)) {
@@ -133,6 +116,14 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 
 			return null;
 		};
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function getTransformer()
+	{
+		return $this->transformer;
 	}
 
 	/**

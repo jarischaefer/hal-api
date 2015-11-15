@@ -6,6 +6,8 @@ use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
 use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
 use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
+use Jarischaefer\HalApi\Transformers\HalApiTransformer;
+use Jarischaefer\HalApi\Transformers\TransformerFactory;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -55,6 +57,13 @@ interface HalApiResourceControllerContract extends HalApiControllerContract
 	 * @return callable
 	 */
 	public static function getModelBindingCallback();
+
+	/**
+	 * Returns an instance of a transformer to be used for all transformations in this controller.
+	 *
+	 * @return HalApiTransformer
+	 */
+	public function getTransformer();
 
 	/**
 	 * Returns a paginated API response containing n models where n equals either the default number of models per page

@@ -32,12 +32,12 @@ class HalApiLinkImpl implements HalApiLink
 	private $queryString;
 
 	/**
-	 * @param UrlGenerator $urlGenerator
+	 * @param HalApiUrlGenerator $urlGenerator
 	 * @param Route $route
 	 * @param array $parameters
 	 * @param string $queryString
 	 */
-	public function __construct(UrlGenerator $urlGenerator, Route $route, $parameters = [], $queryString = '')
+	public function __construct(HalApiUrlGenerator $urlGenerator, Route $route, $parameters = [], $queryString = '')
 	{
 		$this->route = $route;
 		$this->parameters = is_array($parameters) ? $parameters : [$parameters];

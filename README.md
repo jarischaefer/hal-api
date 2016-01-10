@@ -10,7 +10,7 @@ These docs might not always be in sync with all the changes.
 
 ### Requirements
 
-Requires Laravel 5.1 and PHP 5.6+.
+Requires Laravel 5.2 and PHP 5.6+.
 
 ### Composer
 

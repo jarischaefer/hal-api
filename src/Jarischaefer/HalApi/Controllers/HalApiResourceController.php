@@ -2,9 +2,7 @@
 
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
@@ -12,12 +10,9 @@ use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
 use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
 use Jarischaefer\HalApi\Representations\HalApiRepresentation;
-use Jarischaefer\HalApi\Representations\RepresentationFactory;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
-use Jarischaefer\HalApi\Routing\LinkFactory;
 use Jarischaefer\HalApi\Transformers\HalApiTransformer;
 use Jarischaefer\HalApi\Transformers\HalApiTransformerContract;
-use Jarischaefer\HalApi\Transformers\TransformerFactory;
 use RuntimeException;
 use Schema;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;

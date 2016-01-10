@@ -7,7 +7,6 @@ use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
 use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
 use Jarischaefer\HalApi\Transformers\HalApiTransformer;
-use Jarischaefer\HalApi\Transformers\TransformerFactory;
 use Symfony\Component\HttpFoundation\Response;
 
 /**

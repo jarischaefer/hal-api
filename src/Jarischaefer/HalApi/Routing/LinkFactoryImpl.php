@@ -1,6 +1,5 @@
 <?php namespace Jarischaefer\HalApi\Routing;
 
-use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Routing\Route;
 
 /**
@@ -11,14 +10,14 @@ class LinkFactoryImpl implements LinkFactory
 {
 
 	/**
-	 * @var UrlGenerator
+	 * @var HalApiUrlGenerator
 	 */
 	private $urlGenerator;
 
 	/**
-	 * @param UrlGenerator $urlGenerator
+	 * @param HalApiUrlGenerator $urlGenerator
 	 */
-	public function __construct(UrlGenerator $urlGenerator)
+	public function __construct(HalApiUrlGenerator $urlGenerator)
 	{
 		$this->urlGenerator = $urlGenerator;
 	}

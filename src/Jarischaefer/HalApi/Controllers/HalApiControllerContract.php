@@ -1,8 +1,8 @@
 <?php namespace Jarischaefer\HalApi\Controllers;
 
-use Illuminate\Contracts\Routing\UrlGenerator;
 use Jarischaefer\HalApi\Caching\CacheFactory;
 use Jarischaefer\HalApi\Caching\HalApiCache;
+use Jarischaefer\HalApi\Routing\HalApiUrlGenerator;
 
 /**
  * Class HalApiControllerContract
@@ -57,11 +57,11 @@ interface HalApiControllerContract
 	 *
 	 * http://my.app.example.com/users/99e31491-dd32-4e2c-b221-7deeb6cc4853
 	 *
-	 * @param UrlGenerator $urlGenerator
+	 * @param HalApiUrlGenerator $urlGenerator
 	 * @param string $methodName
 	 * @param array $parameters
 	 * @return string
 	 */
-	public static function action(UrlGenerator $urlGenerator, $methodName, $parameters = []);
+	public static function action(HalApiUrlGenerator $urlGenerator, $methodName, $parameters = []);
 
 }

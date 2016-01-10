@@ -1,8 +1,8 @@
 <?php namespace Jarischaefer\HalApi\Tests\Routing;
 
-use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Routing\Route;
 use Jarischaefer\HalApi\Routing\HalApiLinkImpl;
+use Jarischaefer\HalApi\Routing\HalApiUrlGenerator;
 use Jarischaefer\HalApi\Tests\TestCase;
 use Mockery;
 
@@ -11,13 +11,13 @@ class HalApiLinkImplTest extends TestCase
 
 	public function testGetLink()
 	{
-		$urlGenerator = Mockery::mock(UrlGenerator::class);
+		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
 			->atLeast($this->once())
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['foo'])
 			->andReturn('/parameters/foo');
 
-		/** @var UrlGenerator $urlGenerator */
+		/** @var HalApiUrlGenerator $urlGenerator */
 		$route = new Route(['GET'], '/parameters/{parameter}', ['controller' => 'Foo\Bar\Controllers\TestController@doSomething']);
 		$link = new HalApiLinkImpl($urlGenerator, $route, ['foo'], '?bar=test');
 
@@ -26,13 +26,13 @@ class HalApiLinkImplTest extends TestCase
 
 	public function testGetRoute()
 	{
-		$urlGenerator = Mockery::mock(UrlGenerator::class);
+		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
 			->atLeast($this->once())
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['foo'])
 			->andReturn('/parameters/foo');
 
-		/** @var UrlGenerator $urlGenerator */
+		/** @var HalApiUrlGenerator $urlGenerator */
 		$route = new Route(['GET'], '/parameters/{parameter}', ['controller' => 'Foo\Bar\Controllers\TestController@doSomething']);
 		$link = new HalApiLinkImpl($urlGenerator, $route, ['foo'], '?bar=test');
 
@@ -41,13 +41,13 @@ class HalApiLinkImplTest extends TestCase
 
 	public function testGetParameters()
 	{
-		$urlGenerator = Mockery::mock(UrlGenerator::class);
+		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
 			->atLeast($this->once())
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['foo'])
 			->andReturn('/parameters/foo');
 
-		/** @var UrlGenerator $urlGenerator */
+		/** @var HalApiUrlGenerator $urlGenerator */
 		$route = new Route(['GET'], '/parameters/{parameter}', ['controller' => 'Foo\Bar\Controllers\TestController@doSomething']);
 		$link = new HalApiLinkImpl($urlGenerator, $route, ['foo'], '?bar=test');
 
@@ -56,13 +56,13 @@ class HalApiLinkImplTest extends TestCase
 
 	public function testGetQueryString()
 	{
-		$urlGenerator = Mockery::mock(UrlGenerator::class);
+		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
 			->atLeast($this->once())
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['foo'])
 			->andReturn('/parameters/foo');
 
-		/** @var UrlGenerator $urlGenerator */
+		/** @var HalApiUrlGenerator $urlGenerator */
 		$route = new Route(['GET'], '/parameters/{parameter}', ['controller' => 'Foo\Bar\Controllers\TestController@doSomething']);
 		$link = new HalApiLinkImpl($urlGenerator, $route, ['foo'], '?bar=test');
 
@@ -74,13 +74,13 @@ class HalApiLinkImplTest extends TestCase
 
 	public function testIsTemplated()
 	{
-		$urlGenerator = Mockery::mock(UrlGenerator::class);
+		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
 			->atLeast($this->once())
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['foo'])
 			->andReturn('/parameters/foo');
 
-		/** @var UrlGenerator $urlGenerator */
+		/** @var HalApiUrlGenerator $urlGenerator */
 		$route = new Route(['GET'], '/parameters/{parameter}', ['controller' => 'Foo\Bar\Controllers\TestController@doSomething']);
 		$link = new HalApiLinkImpl($urlGenerator, $route, ['foo'], '?bar=test');
 
@@ -89,7 +89,7 @@ class HalApiLinkImplTest extends TestCase
 
 	public function testIsTemplatedFalse()
 	{
-		$urlGenerator = Mockery::mock(UrlGenerator::class);
+		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
 			->once()
 			->with('Foo\Bar\Controllers\TestController@doSomething')
@@ -100,7 +100,7 @@ class HalApiLinkImplTest extends TestCase
 			->with('Foo\Bar\Controllers\TestController@doSomething', [])
 			->andReturn('/parameters');
 
-		/** @var UrlGenerator $urlGenerator */
+		/** @var HalApiUrlGenerator $urlGenerator */
 		$route = new Route(['GET'], '/parameters', ['controller' => 'Foo\Bar\Controllers\TestController@doSomething']);
 		$link = new HalApiLinkImpl($urlGenerator, $route, [], '?bar=test');
 
@@ -109,13 +109,13 @@ class HalApiLinkImplTest extends TestCase
 
 	public function testIsTemplatedQueryString()
 	{
-		$urlGenerator = Mockery::mock(UrlGenerator::class);
+		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
 			->atLeast($this->once())
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['page' => 10])
 			->andReturn('/parameters');
 
-		/** @var UrlGenerator $urlGenerator */
+		/** @var HalApiUrlGenerator $urlGenerator */
 		$route = new Route(['GET'], '/parameters?page={page}', ['controller' => 'Foo\Bar\Controllers\TestController@doSomething']);
 		$link = new HalApiLinkImpl($urlGenerator, $route, ['page' => 10], '?bar=test');
 
@@ -124,13 +124,13 @@ class HalApiLinkImplTest extends TestCase
 
 	public function testBuild()
 	{
-		$urlGenerator = Mockery::mock(UrlGenerator::class);
+		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
 			->atLeast($this->once())
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['foo'])
 			->andReturn('/parameters/foo');
 
-		/** @var UrlGenerator $urlGenerator */
+		/** @var HalApiUrlGenerator $urlGenerator */
 		$route = new Route(['GET'], '/parameters/{parameter}', ['controller' => 'Foo\Bar\Controllers\TestController@doSomething']);
 		$link = new HalApiLinkImpl($urlGenerator, $route, ['foo'], '?bar=test');
 
@@ -142,13 +142,13 @@ class HalApiLinkImplTest extends TestCase
 
 	public function testToString()
 	{
-		$urlGenerator = Mockery::mock(UrlGenerator::class);
+		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
 			->atLeast($this->once())
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['foo'])
 			->andReturn('/parameters/foo');
 
-		/** @var UrlGenerator $urlGenerator */
+		/** @var HalApiUrlGenerator $urlGenerator */
 		$route = new Route(['GET'], '/parameters/{parameter}', ['controller' => 'Foo\Bar\Controllers\TestController@doSomething']);
 		$link = new HalApiLinkImpl($urlGenerator, $route, ['foo'], '?bar=test');
 

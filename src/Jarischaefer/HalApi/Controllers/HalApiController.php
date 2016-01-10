@@ -1,8 +1,8 @@
 <?php namespace Jarischaefer\HalApi\Controllers;
 
 use Illuminate\Contracts\Routing\ResponseFactory;
-use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\Request;
@@ -14,6 +14,7 @@ use Jarischaefer\HalApi\Helpers\SafeIndexArray;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
 use Jarischaefer\HalApi\Representations\RepresentationFactory;
 use Jarischaefer\HalApi\Routing\HalApiLink;
+use Jarischaefer\HalApi\Routing\HalApiUrlGenerator;
 use Jarischaefer\HalApi\Routing\LinkFactory;
 
 /**
@@ -23,7 +24,7 @@ use Jarischaefer\HalApi\Routing\LinkFactory;
 abstract class HalApiController extends Controller implements HalApiControllerContract
 {
 
-	use DispatchesJobs, ValidatesRequests;
+	use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
 	/**
 	 * Global prefix for the managed cache.
@@ -134,7 +135,7 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 	/**
 	 * @inheritdoc
 	 */
-	public static function action(UrlGenerator $urlGenerator, $methodName, $parameters = [])
+	public static function action(HalApiUrlGenerator $urlGenerator, $methodName, $parameters = [])
 	{
 		$parameters = is_array($parameters) ? $parameters : [$parameters];
 

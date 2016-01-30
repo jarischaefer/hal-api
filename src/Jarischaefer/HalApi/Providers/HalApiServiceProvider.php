@@ -53,6 +53,8 @@ class HalApiServiceProvider extends ServiceProvider
 		self::BASE_PATH . 'Middleware' . DIRECTORY_SEPARATOR . 'HalApiCacheMiddleware.php',
 		self::BASE_PATH . 'Middleware' . DIRECTORY_SEPARATOR . 'HalApiETagMiddleware.php',
 
+		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiPaginatedRepresentation.php',
+		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiPaginatedRepresentationImpl.php',
 		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiRepresentation.php',
 		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiRepresentationImpl.php',
 		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'RepresentationFactory.php',

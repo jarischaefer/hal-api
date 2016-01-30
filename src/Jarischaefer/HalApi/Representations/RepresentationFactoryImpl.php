@@ -1,8 +1,10 @@
 <?php namespace Jarischaefer\HalApi\Representations;
 
+use Illuminate\Contracts\Pagination\Paginator;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
 use Jarischaefer\HalApi\Routing\HalApiLink;
 use Jarischaefer\HalApi\Routing\LinkFactory;
+use Jarischaefer\HalApi\Transformers\HalApiTransformerContract;
 
 /**
  * Class RepresentationFactoryImpl
@@ -36,6 +38,14 @@ class RepresentationFactoryImpl implements RepresentationFactory
 	public function create(HalApiLink $self, HalApiLink $parent)
 	{
 		return new HalApiRepresentationImpl($this->linkFactory, $this->routeHelper, $self, $parent);
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function paginated(HalApiLink $self, HalApiLink $parent, Paginator $paginator, HalApiTransformerContract $transformer, $relation)
+	{
+		return new HalApiPaginatedRepresentationImpl($this->linkFactory, $this->routeHelper, $self, $parent, $paginator, $transformer, $relation);
 	}
 
 }

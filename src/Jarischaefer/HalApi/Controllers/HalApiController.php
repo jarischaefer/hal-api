@@ -1,19 +1,20 @@
 <?php namespace Jarischaefer\HalApi\Controllers;
 
 use Illuminate\Contracts\Routing\ResponseFactory;
-use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Routing\Route;
 use Jarischaefer\HalApi\Caching\CacheFactory;
-use Jarischaefer\HalApi\Representations\HalApiRepresentationImpl;
+use Jarischaefer\HalApi\Representations\HalApiRepresentation;
 use Jarischaefer\HalApi\Helpers\SafeIndexArray;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
 use Jarischaefer\HalApi\Representations\RepresentationFactory;
 use Jarischaefer\HalApi\Routing\HalApiLink;
+use Jarischaefer\HalApi\Routing\HalApiUrlGenerator;
 use Jarischaefer\HalApi\Routing\LinkFactory;
 
 /**
@@ -23,7 +24,7 @@ use Jarischaefer\HalApi\Routing\LinkFactory;
 abstract class HalApiController extends Controller implements HalApiControllerContract
 {
 
-	use DispatchesJobs, ValidatesRequests;
+	use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
 
 	/**
 	 * Global prefix for the managed cache.
@@ -76,30 +77,26 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 	protected $parent;
 
 	/**
-	 * @param Application $app
-	 * @param Request $request
-	 * @param LinkFactory $linkFactory
-	 * @param RepresentationFactory $representationFactory
-	 * @param RouteHelper $routeHelper
-	 * @param ResponseFactory $responseFactory
+	 * @param HalApiControllerParameters $parameters
 	 */
-	public function __construct(Application $app, Request $request, LinkFactory $linkFactory, RepresentationFactory $representationFactory, RouteHelper $routeHelper, ResponseFactory $responseFactory)
+	public function __construct(HalApiControllerParameters $parameters)
 	{
-		$this->app = $app;
-		$this->request = $request;
-		$this->linkFactory = $linkFactory;
-		$this->representationFactory = $representationFactory;
-		$this->routeHelper = $routeHelper;
-		$this->responseFactory = $responseFactory;
-		$this->parameters = new SafeIndexArray($request->input());
-		$this->body = new SafeIndexArray($request->json()->all());
+		$this->app = $parameters->getApplication();
+		$this->linkFactory = $parameters->getLinkFactory();
+		$this->representationFactory = $parameters->getRepresentationFactory();
+		$this->routeHelper = $parameters->getRouteHelper();
+		$this->responseFactory = $parameters->getResponseFactory();
+		$this->request = $parameters->getRequest();
+
+		$this->parameters = new SafeIndexArray($this->request->input());
+		$this->body = new SafeIndexArray($this->request->json()->all());
 		/** @var Route $route */
-		$route = $request->route();
+		$route = $this->request->route();
 
 		if ($route) {
 			$routeParameters = $route->parameters();
 			$this->self = $this->linkFactory->create($route, $routeParameters);
-			$this->parent = $this->linkFactory->create($routeHelper->parent($route), $routeParameters);
+			$this->parent = $this->linkFactory->create($this->routeHelper->parent($route), $routeParameters);
 		}
 	}
 
@@ -120,7 +117,7 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 	}
 
 	/**
-	 * @return HalApiRepresentationImpl
+	 * @return HalApiRepresentation
 	 */
 	protected function createResponse()
 	{
@@ -138,7 +135,7 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 	/**
 	 * @inheritdoc
 	 */
-	public static function action(UrlGenerator $urlGenerator, $methodName, $parameters = [])
+	public static function action(HalApiUrlGenerator $urlGenerator, $methodName, $parameters = [])
 	{
 		$parameters = is_array($parameters) ? $parameters : [$parameters];
 

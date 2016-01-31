@@ -3,7 +3,7 @@
 use Illuminate\Routing\Route;
 
 /**
- * Class HalApiLinkImpl
+ * Interface HalApiLink
  * @package Jarischaefer\HalApi\Routing
  */
 interface HalApiLink

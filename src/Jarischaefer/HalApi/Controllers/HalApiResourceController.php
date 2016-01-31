@@ -1,24 +1,20 @@
 <?php namespace Jarischaefer\HalApi\Controllers;
 
 use Exception;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Contracts\Routing\ResponseFactory;
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Application;
+use Illuminate\Database\Schema\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
 use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
 use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
-use Jarischaefer\HalApi\Representations\HalApiRepresentation;
-use Jarischaefer\HalApi\Representations\RepresentationFactory;
+use Jarischaefer\HalApi\Representations\HalApiPaginatedRepresentation;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
-use Jarischaefer\HalApi\Routing\LinkFactory;
 use Jarischaefer\HalApi\Transformers\HalApiTransformer;
-use Jarischaefer\HalApi\Transformers\TransformerFactory;
+use Jarischaefer\HalApi\Transformers\HalApiTransformerContract;
 use RuntimeException;
-use Schema;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
@@ -43,15 +39,15 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	const PAGINATION_DEFAULT_ITEMS_PER_PAGE = 10;
 
 	/**
-	 * @var TransformerFactory
-	 */
-	protected $transformerFactory;
-	/**
 	 * The model's transformer.
 	 *
 	 * @var HalApiTransformer
 	 */
 	protected $transformer;
+	/**
+	 * @var Builder
+	 */
+	protected $schemaBuilder;
 	/**
 	 * The model's namespace + class name (e.g. App\Job::class).
 	 *
@@ -72,36 +68,24 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	protected $perPage;
 
 	/**
-	 * Returns an instance of a transformer to be used for all transformations in this controller.
-	 *
-	 * @return HalApiTransformer
+	 * @param HalApiControllerParameters $parameters
+	 * @param HalApiTransformer $transformer
+	 * @param Builder $schemaBuilder
 	 */
-	abstract protected function getTransformer();
-
-	/**
-	 * @param Application $app
-	 * @param Request $request
-	 * @param LinkFactory $linkFactory
-	 * @param RepresentationFactory $representationFactory
-	 * @param RouteHelper $routeHelper
-	 * @param TransformerFactory $transformerFactory
-	 * @param ResponseFactory $responseFactory
-	 */
-	public function __construct(Application $app, Request $request, LinkFactory $linkFactory, RepresentationFactory $representationFactory, RouteHelper $routeHelper, TransformerFactory $transformerFactory, ResponseFactory $responseFactory)
+	public function __construct(HalApiControllerParameters $parameters, HalApiTransformer $transformer, Builder $schemaBuilder)
 	{
-		parent::__construct($app, $request, $linkFactory, $representationFactory, $routeHelper, $responseFactory);
-
-		$this->transformerFactory = $transformerFactory;
+		parent::__construct($parameters);
 
 		if ($this->app->runningInConsole() && !$this->app->runningUnitTests()) {
 			return;
 		}
 
-		$this->transformer = $this->getTransformer();
+		$this->transformer = $transformer;
+		$this->schemaBuilder = $schemaBuilder;
 		$this->model = static::getModel();
 
-		if (!is_subclass_of($this->transformer, HalApiTransformer::class)) {
-			throw new RuntimeException('Transformer must be child of ' . HalApiTransformer::class);
+		if (!is_subclass_of($this->transformer, HalApiTransformerContract::class)) {
+			throw new RuntimeException('Transformer must be child of ' . HalApiTransformerContract::class);
 		}
 
 		if (!is_subclass_of($this->model, Model::class)) {
@@ -136,6 +120,14 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	}
 
 	/**
+	 * @inheritdoc
+	 */
+	public function getTransformer()
+	{
+		return $this->transformer;
+	}
+
+	/**
 	 * Initializes page and perPage variables based on user input.
 	 */
 	private function preparePagination()
@@ -143,7 +135,7 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 		$this->page = (int)$this->request->get(self::PAGINATION_URI_PAGE, 1);
 		$this->perPage = (int)$this->request->get(self::PAGINATION_URI_PER_PAGE, self::PAGINATION_DEFAULT_ITEMS_PER_PAGE);
 
-		if (!is_numeric($this->page)) {
+		if (!is_numeric($this->page) && $this->page <= 0) {
 			$this->page = 1;
 		}
 
@@ -165,42 +157,12 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	 * totals, ... will be automatically added as well. Furthermore, links to the first, next, previous and last
 	 * pages will be added if applicable.
 	 *
-	 * @param LengthAwarePaginator $paginator
-	 * @return HalApiRepresentation
-	 * @throws Exception
+	 * @param Paginator $paginator
+	 * @return HalApiPaginatedRepresentation
 	 */
-	protected function paginate(LengthAwarePaginator $paginator)
+	protected function paginate(Paginator $paginator)
 	{
-		$route = $this->self->getRoute();
-		$routeParameters = array_merge($this->self->getParameters(), ['per_page' => $this->perPage]);
-		$items = $paginator->items();
-
-		$response = $this->representationFactory->create($this->self, $this->parent)
-			->embedFromArray([
-				static::getRelation(RouteHelper::SHOW) => $this->transformer->collection($items),
-			])
-			->meta('pagination', [
-				'page' => $paginator->currentPage(),
-				'per_page' => $paginator->perPage(),
-				'count' => count($items),
-				'total' => $paginator->total(),
-				'pages' => $paginator->lastPage() ?: 1,
-			])
-			->link('first', $this->linkFactory->create($route, array_merge($routeParameters, ['page' => 1])));
-
-		if ($paginator->currentPage() > 1) {
-			$prev = $this->linkFactory->create($route, array_merge($routeParameters, ['page' => $paginator->currentPage() - 1]));
-			$response->link('prev', $prev);
-		}
-
-		if ($paginator->currentPage() < $paginator->lastPage()) {
-			$next = $this->linkFactory->create($route, array_merge($routeParameters, ['page' => $paginator->currentPage() + 1]));
-			$response->link('next', $next);
-		}
-
-		$response->link('last', $this->linkFactory->create($route, array_merge($routeParameters, ['page' => $paginator->lastPage() ?: 1])));
-
-		return $response;
+		return $this->representationFactory->paginated($this->self, $this->parent, $paginator, $this->transformer, static::getRelation(RouteHelper::SHOW));
 	}
 
 	/**
@@ -232,7 +194,7 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 		/** @var Model $model */
 		$model = new $this->model;
 		$keys = array_keys($this->body->getArray());
-		$columnNames = Schema::getColumnListing($model->getTable());
+		$columnNames = $this->schemaBuilder->getColumnListing($model->getTable());
 
 		foreach ($columnNames as $column) {
 			if (!$model->isFillable($column)) {
@@ -259,16 +221,14 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	 */
 	public function update($model = null)
 	{
-		/* @var Model $model */
-		if ($model == null) {
-			$model = new $this->model;
-		}
+		/** @var Model $model */
+		$model = $model ?: new $this->model;
 
 		switch ($this->request->getMethod()) {
 			case Request::METHOD_PUT:
 				$existed = $model->exists;
 				$keys = array_keys($this->body->getArray());
-				$columnNames = Schema::getColumnListing($model->getTable());
+				$columnNames = $this->schemaBuilder->getColumnListing($model->getTable());
 
 				foreach ($columnNames as $column) {
 					if (!$model->isFillable($column)) {
@@ -313,7 +273,7 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	public function destroy($model)
 	{
 		try {
-			/* @var Model $model */
+			/** @var Model $model */
 			$model->delete();
 		} catch (Exception $e) {
 			throw new DatabaseConflictException('Model could not be deleted: ' . $model->getKey());

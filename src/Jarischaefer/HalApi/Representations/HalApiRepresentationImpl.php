@@ -66,7 +66,8 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	{
 		$this->linkFactory = $linkFactory;
 		$this->routeHelper = $routeHelper;
-		$this->self($self)->parent($parent);
+		$this->link(self::SELF, $self);
+		$this->link(self::PARENT, $parent);
 	}
 
 	/**
@@ -92,22 +93,6 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 		$this->root[$key] = $value;
 
 		return $this;
-	}
-
-	/**
-	 * @inheritdoc
-	 */
-	public function self(HalApiLink $self)
-	{
-		return $this->link(self::SELF, $self);
-	}
-
-	/**
-	 * @inheritdoc
-	 */
-	public function parent(HalApiLink $parent)
-	{
-		return $this->link(self::PARENT, $parent);
 	}
 
 	/**
@@ -240,7 +225,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 		$subordinateRoutes = $this->routeHelper->subordinates($link->getRoute());
 
 		foreach ($subordinateRoutes as $subRoute) {
-			/* @var HalApiController $class */
+			/** @var HalApiController $class */
 			list($class, $method) = explode('@', $subRoute->getActionName());
 			$this->link($class::getRelation($method), $this->linkFactory->create($subRoute, $link->getParameters()));
 		}
@@ -278,7 +263,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 
 		foreach ($this->embedded as $relation => $embedded) {
 			if (is_array($embedded)) {
-				/* @var HalApiRepresentation $item */
+				/** @var HalApiRepresentation $item */
 				foreach ($embedded as $item) {
 					$build['_embedded'][$relation][] = $item->build();
 				}

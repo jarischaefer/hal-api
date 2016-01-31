@@ -1,13 +1,10 @@
 <?php namespace Jarischaefer\HalApi\Tests\Helpers;
 
 use Exception;
-use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Routing\Route;
-use Illuminate\Routing\Router;
 use Jarischaefer\HalApi\Controllers\HalApiController;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
 use Jarischaefer\HalApi\Tests\TestCase;
-use ReflectionClass;
 
 class TestController extends HalApiController
 {
@@ -25,31 +22,15 @@ class TestController extends HalApiController
 class RouteHelperTest extends TestCase
 {
 
-	private static function clearRoutes()
-	{
-		$routes = \Route::getRoutes();
-		$reflectionClass = new ReflectionClass($routes);
-		$routesProperty = $reflectionClass->getProperty('routes');
-		$allRoutesProperty = $reflectionClass->getProperty('allRoutes');
-		$routesProperty->setAccessible(true);
-		$allRoutesProperty->setAccessible(true);
-		$routesProperty->setValue($routes, []);
-		$allRoutesProperty->setValue($routes, []);
-	}
-
 	public function testRouteHelper()
 	{
-		/* @var Dispatcher $dispatcher */
-		$dispatcher = $this->getMock(Dispatcher::class);
-		$router = new Router($dispatcher, null);
-
-		$helper = RouteHelper::make($router);
+		$helper = $this->createRouteHelper();
 		$helper->resource('test', TestController::class)->done();
 
-		$routes = $router->getRoutes();
+		$routes = $helper->getRouter()->getRoutes();
 
 		$found = false;
-		/* @var Route $route */
+		/** @var Route $route */
 		foreach ($routes as $route) {
 			if ($route->getUri() == 'test?' . RouteHelper::PAGINATION_URI) {
 				$found = true;
@@ -68,19 +49,21 @@ class RouteHelperTest extends TestCase
 
 	public function testGetRouteByAction()
 	{
-		\Route::get('/test', TestController::actionName('test'));
-		$test = $this->routeHelper->byAction(TestController::actionName('test'));
+		$helper = $this->createRouteHelper();
+		$helper->getRouter()->get('/test', TestController::actionName('test'));
+
+		$test = $helper->byAction(TestController::actionName('test'));
 		$this->assertEquals($test->getActionName(), TestController::actionName('test'));
 
 		try {
-			$this->routeHelper->byAction(null);
+			$helper->byAction(null);
 			$this->fail('Route should not have been found.');
 		} catch (Exception $e) {
 			// expected
 		}
 
 		try {
-			$this->routeHelper->byAction('');
+			$helper->byAction('');
 			$this->fail('Route should not have been found.');
 		} catch (Exception $e) {
 			// expected
@@ -89,19 +72,19 @@ class RouteHelperTest extends TestCase
 
 	public function testGetParentRoute()
 	{
-		self::clearRoutes();
+		$helper = $this->createRouteHelper();
+		$router = $helper->getRouter();
+		$router->get('/test', TestController::actionName('test'));
+		$router->get('/test/sub1', TestController::actionName('sub1'));
+		$router->get('/test/sub1/sub2', TestController::actionName('sub2'));
 
-		\Route::get('/test', TestController::actionName('test'));
-		\Route::get('/test/sub1', TestController::actionName('sub1'));
-		\Route::get('/test/sub1/sub2', TestController::actionName('sub2'));
+		$test = $helper->byAction(TestController::actionName('test'));
+		$sub1 = $helper->byAction(TestController::actionName('sub1'));
+		$sub2 = $helper->byAction(TestController::actionName('sub2'));
 
-		$test = $this->routeHelper->byAction(TestController::actionName('test'));
-		$sub1 = $this->routeHelper->byAction(TestController::actionName('sub1'));
-		$sub2 = $this->routeHelper->byAction(TestController::actionName('sub2'));
-
-		$parentTest = $this->routeHelper->parent($test);
-		$parentSub1 = $this->routeHelper->parent($sub1);
-		$parentSub2 = $this->routeHelper->parent($sub2);
+		$parentTest = $helper->parent($test);
+		$parentSub1 = $helper->parent($sub1);
+		$parentSub2 = $helper->parent($sub2);
 
 		$this->assertEquals($test->getActionName(), $parentTest->getActionName());
 		$this->assertEquals($test->getActionName(), $parentSub1->getActionName());
@@ -110,19 +93,20 @@ class RouteHelperTest extends TestCase
 
 	public function testGetSubordinateRoutes()
 	{
-		self::clearRoutes();
+		$helper = $this->createRouteHelper();
+		$router = $helper->getRouter();
 
-		\Route::get('/test', TestController::actionName('test'));
-		\Route::get('/test/sub1', TestController::actionName('sub1'));
-		\Route::get('/test/sub1/sub2', TestController::actionName('sub2'));
+		$router->get('/test', TestController::actionName('test'));
+		$router->get('/test/sub1', TestController::actionName('sub1'));
+		$router->get('/test/sub1/sub2', TestController::actionName('sub2'));
 
-		$test = $this->routeHelper->byAction(TestController::actionName('test'));
-		$sub1 = $this->routeHelper->byAction(TestController::actionName('sub1'));
-		$sub2 = $this->routeHelper->byAction(TestController::actionName('sub2'));
+		$test = $helper->byAction(TestController::actionName('test'));
+		$sub1 = $helper->byAction(TestController::actionName('sub1'));
+		$sub2 = $helper->byAction(TestController::actionName('sub2'));
 
-		$subordinateTest = $this->routeHelper->subordinates($test);
-		$subordinateSub1 = $this->routeHelper->subordinates($sub1);
-		$subordinateSub2 = $this->routeHelper->subordinates($sub2);
+		$subordinateTest = $helper->subordinates($test);
+		$subordinateSub1 = $helper->subordinates($sub1);
+		$subordinateSub2 = $helper->subordinates($sub2);
 
 		$this->assertEquals(2, count($subordinateTest));
 		$this->assertEquals(TestController::actionName('sub1'), $subordinateTest[0]->getActionName());

@@ -1,18 +1,20 @@
 # HAL-API
 
-## About
+Enhances your HATEOAS experience by automating common tasks.
+
+# About
 
 This package is based on Laravel 5.
 It is designed to automate common tasks in RESTful API programming.
 These docs might not always be in sync with all the changes.
 
-## Installation
+# Installation
 
-### Requirements
+## Requirements
 
-Requires Laravel 5.1 and PHP 5.6+.
+Requires Laravel 5.2 and PHP 5.6 or PHP 7.0.
 
-### Composer
+## Composer
 
 Either require the package via Composer by issuing the following command
 
@@ -27,9 +29,9 @@ or by including the following in your composer.json.
 ```
 This is going to install the more stable master version.
 
-### Service Provider
+## Service Provider
 
-#### app.php
+### app.php
 
 Register the Service Provider in your config/app.php file.
 ```php
@@ -38,7 +40,7 @@ Register the Service Provider in your config/app.php file.
 ]
 ```
 
-#### compile.php (optional step)
+### compile.php (optional step)
 
 Register the Service Provider in your config/compile.php file.
 ```php
@@ -49,9 +51,9 @@ Register the Service Provider in your config/compile.php file.
 The next time you generate an optimized classloader using artisan,
 the optimized file will contain the contents of this package as well.
 
-## Examples
+# Usage
 
-#### Models
+## Models
 
 The following is a simple relationship with three tables.
 The user has two One-To-Many relationships with both Posts and Comments.
@@ -106,7 +108,7 @@ class Comment extends Model
 }
 ```
 
-#### Transformer
+## Transformer
 
 Transformers provide an additional layer between your models and the controller.
 They help you create a HAL response for either a single item or a collection of items.
@@ -147,9 +149,222 @@ class PostTransformer extends HalApiTransformer
 	}
 
 }
+
+class CommentTransformer extends HalApiTransformer
+{
+
+	public function transform(Model $model)
+	{
+		// ...
+	}
+
+}
 ```
 
-#### Controller
+### Linking relationships
+
+Overriding a transformer's getLinks method allows you to link to related resources.
+Linking a Post to its User:
+
+```php
+class PostTransformer extends HalApiTransformer
+{
+
+	private $userRoute;
+
+	private $userRelation;
+
+	public function __construct(LinkFactory $linkFactory, RepresentationFactory $representationFactory, RouteHelper $routeHelper, Route $self, Route $parent)
+	{
+		parent::__construct($linkFactory, $representationFactory, $routeHelper, $self, $parent);
+
+		$this->userRoute = $routeHelper->byAction(UsersController::actionName(RouteHelper::SHOW));
+		$this->userRelation = UsersController::getRelation(RouteHelper::SHOW);
+	}
+
+	public function transform(Model $model)
+	{
+		/** @var Post $model */
+
+		return [
+			'id' => (int)$this->model->id,
+			'title' => (string)$this->model->title,
+			'text' => (string)$this->model->text,
+			'user_id' => (int)$this->model->user_id,
+		];
+	}
+
+	protected function getLinks(Model $model)
+	{
+		/** @var Post $model */
+
+		return [
+			$this->userRelation => $this->linkFactory->create($this->userRoute, $model->user_id),
+		];
+	}
+
+}
+```
+
+Notice the "users.show" relation among the links.
+
+```json
+{
+	"data": {
+		"id": 123,
+		"title": "Welcome!",
+		"text": "Hello World",
+		"user_id": 456
+	},
+	"_links": {
+		"self": {
+			"href": "http://hal-api.development/posts/123",
+			"templated": true
+		},
+		"parent": {
+			"href": "http://hal-api.development/posts",
+			"templated": false
+		},
+		"users.show": {
+			"href": "http://hal-api.development/users/456",
+			"templated": true
+		},
+		"posts.update": {
+			"href": "http://hal-api.development/posts/123",
+			"templated": true
+		},
+		"posts.destroy": {
+			"href": "http://hal-api.development/posts/123",
+			"templated": true
+		}
+	},
+	"_embedded": {
+	}
+}
+```
+
+### Embedded relationships
+
+Once data from two separate Models needs to be combined, the linking-approach
+doesn't quite cut it. Displaying Posts' authors (firstname and lastname in User model)
+becomes infeasible with more than a dozen items (N+1 GET requests to all "users.show" relationships). Embedding related data is basically the same as eager loading.
+
+```php
+class PostTransformer extends HalApiTransformer
+{
+
+	private $userTransformer;
+
+	private $userRelation;
+
+	public function __construct(LinkFactory $linkFactory, RepresentationFactory $representationFactory, RouteHelper $routeHelper, Route $self, Route $parent, UserTransformer $userTransformer)
+	{
+			parent::__construct($linkFactory, $representationFactory, $routeHelper, $self, $parent);
+
+			$this->userTransformer = $userTransformer;
+			$this->userRelation = UsersController::getRelation(RouteHelper::SHOW);
+	}
+
+	public function transform(Model $model)
+	{
+		/** @var Post $model */
+
+		return [
+			'id' => (int)$this->model->id,
+			'title' => (string)$this->model->title,
+			'text' => (string)$this->model->text,
+			'user_id' => (int)$this->model->user_id,
+		];
+	}
+
+	protected function getEmbedded(Model $model)
+	{
+			/** @var Post $model */
+
+			return [
+				$this->userRelation => $this->userTransformer->item($model->user),
+			];
+	}
+
+}
+```
+
+Notice the "users.show" relation in the _emedded field.
+
+```json
+{
+	"data": {
+		"id": 123,
+		"title": "Welcome!",
+		"text": "Hello World",
+		"user_id": 456
+	},
+	"_links": {
+		"self": {
+			"href": "http://hal-api.development/posts/123",
+			"templated": true
+		},
+		"parent": {
+			"href": "http://hal-api.development/posts",
+			"templated": false
+		},
+		"users.show": {
+			"href": "http://hal-api.development/users/456",
+			"templated": true
+		},
+		"posts.update": {
+			"href": "http://hal-api.development/posts/123",
+			"templated": true
+		},
+		"posts.destroy": {
+			"href": "http://hal-api.development/posts/123",
+			"templated": true
+		}
+	},
+	"_embedded": {
+		"users.show": {
+			"data": {
+				"id": 456,
+				"username": "foo-bar",
+				"email": "foo.bar@example.com",
+				"firstname": "foo",
+				"lastname": "bar",
+				"disabled": false
+			},
+			"_links": {
+				"self": {
+					"href": "http://hal-api.development/users/456",
+					"templated": true
+				},
+				"parent": {
+					"href": "http://hal-api.development/users",
+					"templated": false
+				},
+				"users.posts": {
+					"href": "http://hal-api.development/users/456/posts",
+					"templated": true
+				},
+				"users.comments": {
+					"href": "http://hal-api.development/users/456/comments",
+					"templated": true
+				},
+				"users.update": {
+					"href": "http://hal-api.development/users/456",
+					"templated": true
+				},
+				"users.destroy": {
+					"href": "http://hal-api.development/users/456",
+					"templated": true
+				}
+			},
+			"_embedded": {
+			}
+		}
+	}
+}
+```
+
+## Simple Controller
 
 ```php
 class HomeController extends HalApiController
@@ -165,7 +380,7 @@ class HomeController extends HalApiController
 }
 ```
 
-### HAL Resource Controller
+## Resource Controller
 
 A resource controller consists of three components: **Controller**, **Transformer** and **Model**.
 The model holds data, typically a table row. This data can be transformed to a HAL response using a transformer.
@@ -177,15 +392,6 @@ class UsersController extends HalApiResourceController
 
 	const RELATION = 'users';
 
-	/**
-	 * @var HalApiTransformerContract
-	 */
-	private $postTransformer;
-	/**
-	 * @var HalApiTransformerContract
-	 */
-	private $commentTransformer;
-
 	public static function getModel()
 	{
 		return User::class;
@@ -194,21 +400,6 @@ class UsersController extends HalApiResourceController
 	public static function getRelation($action = null)
 	{
 		return $action ? self::RELATION . '.' . $action : self::RELATION;
-	}
-
-	protected function boot()
-	{
-		parent::boot();
-
-		$postShow = $this->routeHelper->byAction(PostsController::actionName(RouteHelper::SHOW));
-		$postParent = $this->routeHelper->parent($postShow);
-
-		$commentShow = $this->routeHelper->byAction(CommentsController::actionName(RouteHelper::SHOW));
-		$commentParent = $this->routeHelper->parent($commentShow);
-
-		// Additional transformers used for relationships
-		$this->postTransformer = $this->transformerFactory->create(PostTransformer::class, $postShow, $postParent);
-		$this->commentTransformer = $this->transformerFactory->create(CommentTransformer::class, $commentShow, $commentParent);
 	}
 
 	public function posts(User $user)
@@ -229,14 +420,6 @@ class UsersController extends HalApiResourceController
 		return $this->responseFactory->json($commentsController->paginate($comments)->build());
 	}
 
-	protected function getTransformer()
-	{
-		$self = $this->routeHelper->byAction(static::actionName(RouteHelper::SHOW));
-		$parent = $this->routeHelper->parent($self);
-
-		return $this->transformerFactory->create(UserTransformer::class, $self, $parent);
-	}
-
 }
 
 class PostsController extends HalApiResourceController
@@ -252,14 +435,6 @@ class PostsController extends HalApiResourceController
 	public static function getRelation($action = null)
 	{
 		return $action ? self::RELATION . '.' . $action : self::RELATION;
-	}
-
-	protected function getTransformer()
-	{
-		$self = $this->routeHelper->byAction(static::actionName(RouteHelper::SHOW));
-		$parent = $this->routeHelper->parent($self);
-
-		return $this->transformerFactory->create(PostTransformer::class, $self, $parent);
 	}
 
 }
@@ -279,18 +454,78 @@ class CommentsController extends HalApiResourceController
 		return $action ? self::RELATION . '.' . $action : self::RELATION;
 	}
 
-	protected function getTransformer()
-	{
-		$self = $this->routeHelper->byAction(static::actionName(RouteHelper::SHOW));
-		$parent = $this->routeHelper->parent($self);
+}
+```
 
-		return $this->transformerFactory->create(CommentTransformer::class, $self, $parent);
+## Dependency wiring
+
+It is recommendend that you wire the transformers' and controllers' dependencies in a Service Provider:
+
+```php
+class MyServiceProvider extends ServiceProvider
+{
+
+	public function boot(Router $router)
+	{
+		$linkFactory = $this->app->make(LinkFactory::class);
+		$representationFactory = $this->app->make(RepresentationFactory::class);
+		$routeHelper = $this->app->make(RouteHelper::class);
+
+		$this->app->singleton(UserTransformer::class, function () use ($linkFactory, $representationFactory, $routeHelper) {
+			$self = $routeHelper->byAction(UsersController::actionName(RouteHelper::SHOW));
+			$parent = $routeHelper->parent($self);
+
+			return new UserTransformer($linkFactory, $representationFactory, $routeHelper, $self, $parent);
+		});
+
+		$this->app->singleton(PostTransformer::class, function (Illuminate\Contracts\Foundation\Application $application) use ($linkFactory, $representationFactory, $routeHelper) {
+			$self = $routeHelper->byAction(PostsController::actionName(RouteHelper::SHOW));
+			$parent = $routeHelper->parent($self);
+			$userTransformer = $application->make(UserTransformer::class);
+
+			return new PostTransformer($linkFactory, $representationFactory, $routeHelper, $self, $parent, $userTransformer);
+		});
+
+		$this->app->singleton(CommentTransformer::class, function (Illuminate\Contracts\Foundation\Application $application) use ($linkFactory, $representationFactory, $routeHelper) {
+			$self = $routeHelper->byAction(PostsController::actionName(RouteHelper::SHOW));
+			$parent = $routeHelper->parent($self);
+			$userTransformer = $application->make(UserTransformer::class);
+
+			return new CommentTransformer($linkFactory, $representationFactory, $routeHelper, $self, $parent, $userTransformer);
+		});
+	}
+
+	public function register()
+	{
+		$this->app->singleton(UsersController::class, function (Illuminate\Contracts\Foundation\Application $application) {
+			$parameters = $application->make(HalApiControllerParameters::class);
+			$transformer = $application->make(UserTransformer::class);
+			$schemaBuilder = $application->make(Illuminate\Database\Schema\Builder::class);
+
+			return new UsersController($parameters, $transformer, $schemaBuilder);
+		});
+
+		$this->app->singleton(PostsController::class, function (Illuminate\Contracts\Foundation\Application $application) {
+			$parameters = $application->make(HalApiControllerParameters::class);
+			$transformer = $application->make(PostTransformer::class);
+			$schemaBuilder = $application->make(Illuminate\Database\Schema\Builder::class);
+
+			return new PostsController($parameters, $transformer, $schemaBuilder);
+		});
+
+		$this->app->singleton(CommentsController::class, function (Illuminate\Contracts\Foundation\Application $application) {
+			$parameters = $application->make(HalApiControllerParameters::class);
+			$transformer = $application->make(CommentTransformer::class);
+			$schemaBuilder = $application->make(Illuminate\Database\Schema\Builder::class);
+
+			return new CommentsController($parameters, $transformer, $schemaBuilder);
+		});
 	}
 
 }
 ```
 
-#### routes.php
+## routes.php
 
 ```php
 RouteHelper::make($router)
@@ -309,7 +544,7 @@ RouteHelper::make($router)
 
 ```
 
-#### RouteServiceProvider
+## RouteServiceProvider
 
 Make sure you bind all route parameters in the RouteServiceProvider.
 The callback shown below handles missing parameters depending on the request method.
@@ -328,47 +563,21 @@ public function boot(Router $router)
 }
 ```
 
-#### Exception handler
+## Exception handler
 
 The callback above throws NotFoundHttpException if no record was found.
 To create a proper response instead of an error page, the exception handler must be amended.
 As shown below, various HTTP status codes like 404 and 422 will be returned depending on the exception caught.
 
 ```php
-<?php namespace App\Exceptions;
+class Handler extends ExceptionHandler
+{
 
-use Config;
-use Exception;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
-use Illuminate\Session\TokenMismatchException;
-use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
-use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
-use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
-use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-
-class Handler extends ExceptionHandler {
-
-	/**
-	 * Report or log an exception.
-	 *
-	 * @param  \Exception  $e
-	 * @return void
-	 */
 	public function report(Exception $e)
 	{
 		parent::report($e);
 	}
 
-	/**
-	 * Render an exception into a response.
-	 *
-	 * @param  \Illuminate\Http\Request  $request
-	 * @param  \Exception  $e
-	 * @return \Illuminate\Http\Response
-	 */
 	public function render($request, Exception $e)
 	{
 		switch (get_class($e)) {
@@ -397,9 +606,9 @@ class Handler extends ExceptionHandler {
 }
 ```
 
-#### JSON for a specific model (show)
+# Examples
 
-The example above would yield the following result for a user with user id 123.
+## JSON for a specific model (show)
 
 ```json
 {
@@ -435,21 +644,15 @@ The example above would yield the following result for a user with user id 123.
 		"users.destroy": {
 			"href": "http://hal-api.development/users/123",
 			"templated": true
-		},
-		"users.posts": {
-			"href": "http:/hal-api.development/users/123/posts",
-			"templated": true
 		}
 	},
 	"_embedded": {
-
 	}
 }
 ```
 
-#### JSON for a list of models (index)
+## JSON for a list of models (index)
 
-The following is an index. It contains multiple models inside the _embedded field.
 ```json
 {
 	"_links": {
@@ -544,7 +747,6 @@ The following is an index. It contains multiple models inside the _embedded fiel
 					}
 				},
 				"_embedded": {
-
 				}
 			},
 			{
@@ -587,7 +789,6 @@ The following is an index. It contains multiple models inside the _embedded fiel
 					}
 				},
 				"_embedded": {
-
 				}
 			}
 		]
@@ -595,12 +796,12 @@ The following is an index. It contains multiple models inside the _embedded fiel
 }
 ```
 
-## Contributing
+# Contributing
 
 Feel free to contribute anytime.
 Take a look at the [Laravel Docs](http://laravel.com/docs/master/packages) regarding package development first.
 Once you've made some changes, push them to a new branch and start a pull request.
 
-## License
+# License
 
 This project is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT).

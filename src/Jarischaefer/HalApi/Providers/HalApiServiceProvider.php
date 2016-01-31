@@ -1,18 +1,21 @@
 <?php namespace Jarischaefer\HalApi\Providers;
 
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Jarischaefer\HalApi\Caching\CacheFactory;
 use Jarischaefer\HalApi\Caching\CacheFactoryImpl;
 use Jarischaefer\HalApi\Caching\HalApiCache;
 use Jarischaefer\HalApi\Caching\HalApiCacheImpl;
-use Jarischaefer\HalApi\Caching\HalApiCacheMiddleware;
-use Jarischaefer\HalApi\Caching\HalApiETagMiddleware;
+use Jarischaefer\HalApi\Middleware\HalApiCacheMiddleware;
+use Jarischaefer\HalApi\Middleware\HalApiETagMiddleware;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
 use Jarischaefer\HalApi\Representations\HalApiRepresentation;
 use Jarischaefer\HalApi\Representations\HalApiRepresentationImpl;
 use Jarischaefer\HalApi\Representations\RepresentationFactory;
 use Jarischaefer\HalApi\Representations\RepresentationFactoryImpl;
+use Jarischaefer\HalApi\Routing\HalApiUrlGenerator;
 use Jarischaefer\HalApi\Routing\LinkFactory;
 use Jarischaefer\HalApi\Routing\LinkFactoryImpl;
 use Jarischaefer\HalApi\Transformers\TransformerFactory;
@@ -37,8 +40,6 @@ class HalApiServiceProvider extends ServiceProvider
 		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'CacheFactoryImpl.php',
 		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'HalApiCache.php',
 		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'HalApiCacheImpl.php',
-		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'HalApiCacheMiddleware.php',
-		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'HalApiETagMiddleware.php',
 
 		self::BASE_PATH . 'Controllers' . DIRECTORY_SEPARATOR . 'HalApiController.php',
 		self::BASE_PATH . 'Controllers' . DIRECTORY_SEPARATOR . 'HalApiControllerContract.php',
@@ -49,6 +50,11 @@ class HalApiServiceProvider extends ServiceProvider
 		self::BASE_PATH . 'Helpers' . DIRECTORY_SEPARATOR . 'RouteHelperConstants.php',
 		self::BASE_PATH . 'Helpers' . DIRECTORY_SEPARATOR . 'SafeIndexArray.php',
 
+		self::BASE_PATH . 'Middleware' . DIRECTORY_SEPARATOR . 'HalApiCacheMiddleware.php',
+		self::BASE_PATH . 'Middleware' . DIRECTORY_SEPARATOR . 'HalApiETagMiddleware.php',
+
+		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiPaginatedRepresentation.php',
+		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiPaginatedRepresentationImpl.php',
 		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiRepresentation.php',
 		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiRepresentationImpl.php',
 		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'RepresentationFactory.php',
@@ -56,6 +62,7 @@ class HalApiServiceProvider extends ServiceProvider
 
 		self::BASE_PATH . 'Routing' . DIRECTORY_SEPARATOR . 'HalApiLink.php',
 		self::BASE_PATH . 'Routing' . DIRECTORY_SEPARATOR . 'HalApiLinkImpl.php',
+		self::BASE_PATH . 'Routing' . DIRECTORY_SEPARATOR . 'HalApiUrlGenerator.php',
 		self::BASE_PATH . 'Routing' . DIRECTORY_SEPARATOR . 'LinkFactory.php',
 		self::BASE_PATH . 'Routing' . DIRECTORY_SEPARATOR . 'LinkFactoryImpl.php',
 
@@ -103,8 +110,16 @@ class HalApiServiceProvider extends ServiceProvider
 
 		$this->app->singleton(CacheFactory::class, CacheFactoryImpl::class);
 		$this->app->singleton(TransformerFactory::class, TransformerFactoryImpl::class);
-		$this->app->singleton(LinkFactory::class, LinkFactoryImpl::class);
 		$this->app->singleton(RepresentationFactory::class, RepresentationFactoryImpl::class);
+		$this->app->singleton(LinkFactory::class, function(Application $application) {
+			return new LinkFactoryImpl($application->make(HalApiUrlGenerator::class));
+		});
+		$this->app->singleton(HalApiUrlGenerator::class, function(Application $application) {
+			/** @var Router $router */
+			$router = $application->make(Router::class);
+			$request = $application->make(Request::class);
+			return new HalApiUrlGenerator($router->getRoutes(), $request);
+		});
 	}
 
 	/**

@@ -187,28 +187,42 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	}
 
 	/**
+	 * POST and PUT requests must contain all attributes.
+	 * This method returns all fillable attributes which are missing.
+	 *
+	 * @param Model $model
+	 * @return array
+	 */
+	protected function getMissingUpdateAttributes(Model $model)
+	{
+		$keys = array_keys($this->body->getArray());
+		$columnNames = $this->schemaBuilder->getColumnListing($model->getTable());
+		$attributes = [];
+
+		foreach ($columnNames as $column) {
+			if ($model->isFillable($column) && !in_array($column, $keys)) {
+				$attributes[] = $column;
+			}
+		}
+
+		return $attributes;
+	}
+
+	/**
 	 * @inheritdoc
 	 */
 	public function store()
 	{
 		/** @var Model $model */
 		$model = new $this->model;
-		$keys = array_keys($this->body->getArray());
-		$columnNames = $this->schemaBuilder->getColumnListing($model->getTable());
+		$missingAttributes = $this->getMissingUpdateAttributes($model);
 
-		foreach ($columnNames as $column) {
-			if (!$model->isFillable($column)) {
-				continue; // only check columns that can actually be filled into the database
-			}
-
-			if (!in_array($column, $keys)) {
-				throw new BadPostRequestException('POST requests must contain all attributes. Failed for: ' . $column);
-			}
+		if (!empty($missingAttributes)) {
+			throw new BadPostRequestException('POST requests must contain all attributes. Failed for: ' . join(',', $missingAttributes));
 		}
 
 		try {
-			$model->setRawAttributes($this->body->getArray());
-			$model->save();
+			$model->fill($this->body->getArray())->save();
 		} catch (Exception $e) {
 			throw new DatabaseSaveException('Model could not be created.', 0, $e);
 		}
@@ -226,28 +240,16 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 
 		switch ($this->request->getMethod()) {
 			case Request::METHOD_PUT:
-				$existed = $model->exists;
-				$keys = array_keys($this->body->getArray());
-				$columnNames = $this->schemaBuilder->getColumnListing($model->getTable());
+				$missingAttributes = $this->getMissingUpdateAttributes($model);
 
-				foreach ($columnNames as $column) {
-					if (!$model->isFillable($column)) {
-						continue; // only check columns that can actually be filled into the database
-					}
-
-					if (!in_array($column, $keys)) {
-						throw new BadPutRequestException('PUT requests must contain all attributes. Failed for: ' . $column);
-					}
+				if (!empty($missingAttributes)) {
+					throw new BadPutRequestException('PUT requests must contain all attributes. Failed for: ' . join(',', $missingAttributes));
 				}
 
+				$existed = $model->exists;
+
 				try {
-					if ($model->exists) {
-						$model->update($this->body->getArray());
-						$model->syncOriginal();
-					} else {
-						$model->setRawAttributes($this->body->getArray(), true);
-						$model->save();
-					}
+					$model->fill($this->body->getArray())->save();
 				} catch (Exception $e) {
 					throw new DatabaseSaveException('Model could not be saved.', 0, $e);
 				}
@@ -255,15 +257,14 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 				return $existed ? $this->show($model) : $this->show($model)->setStatusCode(Response::HTTP_CREATED);
 			case Request::METHOD_PATCH:
 				try {
-					$model->update($this->body->getArray());
-					$model->syncOriginal();
+					$model->fill($this->body->getArray())->save();
 				} catch (Exception $e) {
 					throw new DatabaseSaveException('Model could not be updated.', 0, $e);
 				}
 
 				return $this->show($model);
 			default:
-				return $this->responseFactory->json('', Response::HTTP_METHOD_NOT_ALLOWED);
+				return $this->responseFactory->make('', Response::HTTP_METHOD_NOT_ALLOWED);
 		}
 	}
 

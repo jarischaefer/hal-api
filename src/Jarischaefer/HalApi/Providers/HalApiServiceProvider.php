@@ -1,5 +1,7 @@
 <?php namespace Jarischaefer\HalApi\Providers;
 
+use Illuminate\Database\DatabaseManager;
+use Illuminate\Database\Schema\Builder;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
@@ -108,6 +110,12 @@ class HalApiServiceProvider extends ServiceProvider
 		$this->app->bind(HalApiRepresentation::class, HalApiRepresentationImpl::class);
 		$this->app->bind(HalApiCache::class, HalApiCacheImpl::class);
 
+		$this->app->singleton(Builder::class, function (Application $application) {
+			/** @var DatabaseManager $databaseManager */
+			$databaseManager = $application->make(DatabaseManager::class);
+
+			return $databaseManager->connection()->getSchemaBuilder();
+		});
 		$this->app->singleton(CacheFactory::class, CacheFactoryImpl::class);
 		$this->app->singleton(TransformerFactory::class, TransformerFactoryImpl::class);
 		$this->app->singleton(RepresentationFactory::class, RepresentationFactoryImpl::class);

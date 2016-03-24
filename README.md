@@ -500,7 +500,7 @@ class MyServiceProvider extends ServiceProvider
 		$this->app->singleton(UsersController::class, function (Illuminate\Contracts\Foundation\Application $application) {
 			$parameters = $application->make(HalApiControllerParameters::class);
 			$transformer = $application->make(UserTransformer::class);
-			$schemaBuilder = $application->make(Illuminate\Database\Schema\Builder::class);
+			$schemaBuilder = $application->make(\Illuminate\Database\DatabaseManager::class)->connection(config('database.default'))->getSchemaBuilder();
 
 			return new UsersController($parameters, $transformer, $schemaBuilder);
 		});
@@ -508,7 +508,7 @@ class MyServiceProvider extends ServiceProvider
 		$this->app->singleton(PostsController::class, function (Illuminate\Contracts\Foundation\Application $application) {
 			$parameters = $application->make(HalApiControllerParameters::class);
 			$transformer = $application->make(PostTransformer::class);
-			$schemaBuilder = $application->make(Illuminate\Database\Schema\Builder::class);
+			$schemaBuilder = $application->make(\Illuminate\Database\DatabaseManager::class)->connection(config('database.default'))->getSchemaBuilder();
 
 			return new PostsController($parameters, $transformer, $schemaBuilder);
 		});
@@ -516,7 +516,7 @@ class MyServiceProvider extends ServiceProvider
 		$this->app->singleton(CommentsController::class, function (Illuminate\Contracts\Foundation\Application $application) {
 			$parameters = $application->make(HalApiControllerParameters::class);
 			$transformer = $application->make(CommentTransformer::class);
-			$schemaBuilder = $application->make(Illuminate\Database\Schema\Builder::class);
+			$schemaBuilder = $application->make(\Illuminate\Database\DatabaseManager::class)->connection(config('database.default'))->getSchemaBuilder();
 
 			return new CommentsController($parameters, $transformer, $schemaBuilder);
 		});

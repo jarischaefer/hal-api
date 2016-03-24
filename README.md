@@ -141,10 +141,10 @@ class PostTransformer extends HalApiTransformer
 		/** @var Post $model */
 
 		return [
-			'id' => (int)$this->model->id,
-			'title' => (string)$this->model->title,
-			'text' => (string)$this->model->text,
-			'user_id' => (int)$this->model->user_id,
+			'id' => (int)$model->id,
+			'title' => (string)$model->title,
+			'text' => (string)$model->text,
+			'user_id' => (int)$model->user_id,
 		];
 	}
 
@@ -187,10 +187,10 @@ class PostTransformer extends HalApiTransformer
 		/** @var Post $model */
 
 		return [
-			'id' => (int)$this->model->id,
-			'title' => (string)$this->model->title,
-			'text' => (string)$this->model->text,
-			'user_id' => (int)$this->model->user_id,
+			'id' => (int)$model->id,
+			'title' => (string)$model->title,
+			'text' => (string)$model->text,
+			'user_id' => (int)$model->user_id,
 		];
 	}
 
@@ -270,10 +270,10 @@ class PostTransformer extends HalApiTransformer
 		/** @var Post $model */
 
 		return [
-			'id' => (int)$this->model->id,
-			'title' => (string)$this->model->title,
-			'text' => (string)$this->model->text,
-			'user_id' => (int)$this->model->user_id,
+			'id' => (int)$model->id,
+			'title' => (string)$model->title,
+			'text' => (string)$model->text,
+			'user_id' => (int)$model->user_id,
 		];
 	}
 
@@ -406,7 +406,7 @@ class UsersController extends HalApiResourceController
 	{
 		$posts = $user->posts()->paginate($this->perPage);
 		/** @var PostsController $postsController */
-		$postsController = $this->application->make(PostsController::class);
+		$postsController = $this->app->make(PostsController::class);
 
 		return $this->responseFactory->json($postsController->paginate($posts)->build());
 	}
@@ -415,7 +415,7 @@ class UsersController extends HalApiResourceController
 	{
 		$comments = $user->comments()->paginate($this->perPage);
 		/** @var CommentsController $commentsController */
-		$commentsController = $this->application->make(CommentsController::class);
+		$commentsController = $this->app->make(CommentsController::class);
 
 		return $this->responseFactory->json($commentsController->paginate($comments)->build());
 	}

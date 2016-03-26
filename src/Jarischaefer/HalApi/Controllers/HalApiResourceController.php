@@ -41,7 +41,7 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	/**
 	 * The model's transformer.
 	 *
-	 * @var HalApiTransformer
+	 * @var HalApiTransformerContract
 	 */
 	protected $transformer;
 	/**
@@ -69,10 +69,10 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 
 	/**
 	 * @param HalApiControllerParameters $parameters
-	 * @param HalApiTransformer $transformer
+	 * @param HalApiTransformerContract $transformer
 	 * @param Builder $schemaBuilder
 	 */
-	public function __construct(HalApiControllerParameters $parameters, HalApiTransformer $transformer, Builder $schemaBuilder)
+	public function __construct(HalApiControllerParameters $parameters, HalApiTransformerContract $transformer, Builder $schemaBuilder)
 	{
 		parent::__construct($parameters);
 
@@ -83,10 +83,6 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 		$this->transformer = $transformer;
 		$this->schemaBuilder = $schemaBuilder;
 		$this->model = static::getModel();
-
-		if (!is_subclass_of($this->transformer, HalApiTransformerContract::class)) {
-			throw new RuntimeException('Transformer must be child of ' . HalApiTransformerContract::class);
-		}
 
 		if (!is_subclass_of($this->model, Model::class)) {
 			throw new RuntimeException('Model must be child of ' . Model::class);

@@ -41,7 +41,7 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	/**
 	 * The model's transformer.
 	 *
-	 * @var HalApiTransformer
+	 * @var HalApiTransformerContract
 	 */
 	protected $transformer;
 	/**
@@ -69,10 +69,10 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 
 	/**
 	 * @param HalApiControllerParameters $parameters
-	 * @param HalApiTransformer $transformer
+	 * @param HalApiTransformerContract $transformer
 	 * @param Builder $schemaBuilder
 	 */
-	public function __construct(HalApiControllerParameters $parameters, HalApiTransformer $transformer, Builder $schemaBuilder)
+	public function __construct(HalApiControllerParameters $parameters, HalApiTransformerContract $transformer, Builder $schemaBuilder)
 	{
 		parent::__construct($parameters);
 
@@ -83,10 +83,6 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 		$this->transformer = $transformer;
 		$this->schemaBuilder = $schemaBuilder;
 		$this->model = static::getModel();
-
-		if (!is_subclass_of($this->transformer, HalApiTransformerContract::class)) {
-			throw new RuntimeException('Transformer must be child of ' . HalApiTransformerContract::class);
-		}
 
 		if (!is_subclass_of($this->model, Model::class)) {
 			throw new RuntimeException('Model must be child of ' . Model::class);
@@ -101,21 +97,21 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	 */
 	public static function getModelBindingCallback()
 	{
-		return function () {
+		return function ($value) {
 			switch (\Request::getMethod()) {
 				case Request::METHOD_GET:
 					throw new NotFoundHttpException;
 				case Request::METHOD_POST:
 					throw new NotFoundHttpException;
 				case Request::METHOD_PUT:
-					return null;
+					return $value;
 				case Request::METHOD_PATCH:
 					throw new NotFoundHttpException;
 				case Request::METHOD_DELETE:
 					throw new NotFoundHttpException;
+				default:
+					return null;
 			}
-
-			return null;
 		};
 	}
 
@@ -233,10 +229,14 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	/**
 	 * @inheritdoc
 	 */
-	public function update($model = null)
+	public function update($model)
 	{
 		/** @var Model $model */
-		$model = $model ?: new $this->model;
+		if (!($model instanceof Model)) {
+			$id = $model;
+			$model = new $this->model;
+			$model->{$model->getKeyName()} = $id;
+		}
 
 		switch ($this->request->getMethod()) {
 			case Request::METHOD_PUT:

@@ -6,7 +6,7 @@ use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
 use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
 use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
-use Jarischaefer\HalApi\Transformers\HalApiTransformer;
+use Jarischaefer\HalApi\Transformers\HalApiTransformerContract;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -38,11 +38,12 @@ interface HalApiResourceControllerContract extends HalApiControllerContract
 	 * exception.
 	 *
 	 * If you do not typehint your method (take a look at the update method in this class), the variable passed
-	 * will be null. Otherwise an instance of your model with the ->exists property set to false is passed.
+	 * will be the original route parameter.
+	 * Otherwise, an instance of your model with the ->exists property set to false is passed.
 	 *
-	 * public function update($user = null)
+	 * public function update($user)
 	 * {
-	 *        var_dump($user) // null if not found in database
+	 *        var_dump($user) // original route parameter (e.g. new resource's ID) if not found in database
 	 * }
 	 *
 	 * public function update(User $user)
@@ -60,7 +61,7 @@ interface HalApiResourceControllerContract extends HalApiControllerContract
 	/**
 	 * Returns an instance of a transformer to be used for all transformations in this controller.
 	 *
-	 * @return HalApiTransformer
+	 * @return HalApiTransformerContract
 	 */
 	public function getTransformer();
 
@@ -96,12 +97,12 @@ interface HalApiResourceControllerContract extends HalApiControllerContract
 	 * Handles PUT and PATCH requests trying to create or update a model. Parameters are taken from the JSON request
 	 * body. PUT requests must contain all fillable attributes.
 	 *
-	 * @param null $model
+	 * @param Model|mixed $model
 	 * @return array
 	 * @throws BadPutRequestException
 	 * @throws DatabaseSaveException
 	 */
-	public function update($model = null);
+	public function update($model);
 
 	/**
 	 * @param $model

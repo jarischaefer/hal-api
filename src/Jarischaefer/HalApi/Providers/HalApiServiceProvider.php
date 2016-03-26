@@ -20,8 +20,6 @@ use Jarischaefer\HalApi\Representations\RepresentationFactoryImpl;
 use Jarischaefer\HalApi\Routing\HalApiUrlGenerator;
 use Jarischaefer\HalApi\Routing\LinkFactory;
 use Jarischaefer\HalApi\Routing\LinkFactoryImpl;
-use Jarischaefer\HalApi\Transformers\TransformerFactory;
-use Jarischaefer\HalApi\Transformers\TransformerFactoryImpl;
 
 /**
  * Class HalApiServiceProvider
@@ -69,8 +67,6 @@ class HalApiServiceProvider extends ServiceProvider
 		self::BASE_PATH . 'Routing' . DIRECTORY_SEPARATOR . 'LinkFactoryImpl.php',
 
 		self::BASE_PATH . 'Transformers' . DIRECTORY_SEPARATOR . 'HalApiTransformer.php',
-		self::BASE_PATH . 'Transformers' . DIRECTORY_SEPARATOR . 'TransformerFactory.php',
-		self::BASE_PATH . 'Transformers' . DIRECTORY_SEPARATOR . 'TransformerFactoryImpl.php',
 	];
 
 	/**
@@ -117,7 +113,6 @@ class HalApiServiceProvider extends ServiceProvider
 			return $databaseManager->connection()->getSchemaBuilder();
 		});
 		$this->app->singleton(CacheFactory::class, CacheFactoryImpl::class);
-		$this->app->singleton(TransformerFactory::class, TransformerFactoryImpl::class);
 		$this->app->singleton(RepresentationFactory::class, RepresentationFactoryImpl::class);
 		$this->app->singleton(LinkFactory::class, function(Application $application) {
 			return new LinkFactoryImpl($application->make(HalApiUrlGenerator::class));

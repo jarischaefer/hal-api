@@ -2,6 +2,7 @@
 
 use Exception;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
 use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
@@ -96,12 +97,12 @@ interface HalApiResourceControllerContract extends HalApiControllerContract
 	 * Handles PUT and PATCH requests trying to create or update a model. Parameters are taken from the JSON request
 	 * body. PUT requests must contain all fillable attributes.
 	 *
-	 * @param null $model
+	 * @param Model|mixed $model
 	 * @return array
 	 * @throws BadPutRequestException
 	 * @throws DatabaseSaveException
 	 */
-	public function update($model = null);
+	public function update($model);
 
 	/**
 	 * @param $model

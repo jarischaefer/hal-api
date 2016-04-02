@@ -32,5 +32,10 @@ interface RouteHelperConstants
 	 * Query string for pagination purposes.
 	 */
 	const PAGINATION_URI = 'page={page}&per_page={per_page}';
+	/**
+	 * Delimiter for routes' action names.
+	 *
+	 */
+	const ACTION_NAME_DELIMITER = '@';
 
 }

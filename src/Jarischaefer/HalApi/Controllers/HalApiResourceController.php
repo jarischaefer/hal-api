@@ -1,21 +1,15 @@
 <?php namespace Jarischaefer\HalApi\Controllers;
 
-use Exception;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Schema\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
 use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
-use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
-use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
+use Jarischaefer\HalApi\Repositories\HalApiRepository;
 use Jarischaefer\HalApi\Representations\HalApiPaginatedRepresentation;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
-use Jarischaefer\HalApi\Transformers\HalApiTransformer;
 use Jarischaefer\HalApi\Transformers\HalApiTransformerContract;
-use RuntimeException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Class HalApiResourceController
@@ -25,119 +19,47 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 {
 
 	/**
-	 * Query parameter name used for pagination's current page.
-	 */
-	const PAGINATION_URI_PAGE = 'page';
-	/**
-	 * Query parameter name used for pagination's item count per page.
-	 */
-	const PAGINATION_URI_PER_PAGE = 'per_page';
-	/**
-	 * Default number of items per pagination page. Used as a fallback if the value
-	 * provided via configuration is invalid.
-	 */
-	const PAGINATION_DEFAULT_ITEMS_PER_PAGE = 10;
-
-	/**
 	 * The model's transformer.
 	 *
 	 * @var HalApiTransformerContract
 	 */
 	protected $transformer;
 	/**
-	 * @var Builder
-	 */
-	protected $schemaBuilder;
-	/**
-	 * The model's namespace + class name (e.g. App\Job::class).
+	 * The repository being used for data retrieval.
 	 *
-	 * @var string
+	 * @var HalApiRepository
 	 */
-	protected $model;
-	/**
-	 * Holds the current page for pagination purposes.
-	 *
-	 * @var int
-	 */
-	protected $page;
-	/**
-	 * Holds the number of entries per page for pagination purposes.
-	 *
-	 * @var int
-	 */
-	protected $perPage;
+	protected $repository;
 
 	/**
 	 * @param HalApiControllerParameters $parameters
 	 * @param HalApiTransformerContract $transformer
-	 * @param Builder $schemaBuilder
+	 * @param HalApiRepository $repository
 	 */
-	public function __construct(HalApiControllerParameters $parameters, HalApiTransformerContract $transformer, Builder $schemaBuilder)
+	public function __construct(HalApiControllerParameters $parameters, HalApiTransformerContract $transformer, HalApiRepository $repository)
 	{
 		parent::__construct($parameters);
 
-		if ($this->app->runningInConsole() && !$this->app->runningUnitTests()) {
-			return;
-		}
-
 		$this->transformer = $transformer;
-		$this->schemaBuilder = $schemaBuilder;
-		$this->model = static::getModel();
+		$this->repository = $repository;
 
-		if (!is_subclass_of($this->model, Model::class)) {
-			throw new RuntimeException('Model must be child of ' . Model::class);
-		}
-
-		$this->preparePagination();
 		$this->boot();
 	}
 
 	/**
 	 * @inheritdoc
 	 */
-	public static function getModelBindingCallback()
-	{
-		return function ($value) {
-			switch (\Request::getMethod()) {
-				case Request::METHOD_GET:
-					throw new NotFoundHttpException;
-				case Request::METHOD_POST:
-					throw new NotFoundHttpException;
-				case Request::METHOD_PUT:
-					return $value;
-				case Request::METHOD_PATCH:
-					throw new NotFoundHttpException;
-				case Request::METHOD_DELETE:
-					throw new NotFoundHttpException;
-				default:
-					return null;
-			}
-		};
-	}
-
-	/**
-	 * @inheritdoc
-	 */
-	public function getTransformer()
+	public function getTransformer(): HalApiTransformerContract
 	{
 		return $this->transformer;
 	}
 
 	/**
-	 * Initializes page and perPage variables based on user input.
+	 * @inheritdoc
 	 */
-	private function preparePagination()
+	public function getRepository(): HalApiRepository
 	{
-		$this->page = (int)$this->request->get(self::PAGINATION_URI_PAGE, 1);
-		$this->perPage = (int)$this->request->get(self::PAGINATION_URI_PER_PAGE, self::PAGINATION_DEFAULT_ITEMS_PER_PAGE);
-
-		if (!is_numeric($this->page) && $this->page <= 0) {
-			$this->page = 1;
-		}
-
-		if (!is_numeric($this->perPage) || $this->perPage < 1) {
-			$this->perPage = self::PAGINATION_DEFAULT_ITEMS_PER_PAGE;
-		}
+		return $this->repository;
 	}
 
 	/**
@@ -153,116 +75,81 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	 * totals, ... will be automatically added as well. Furthermore, links to the first, next, previous and last
 	 * pages will be added if applicable.
 	 *
+	 * @param HalApiRequestParameters $parameters
 	 * @param Paginator $paginator
 	 * @return HalApiPaginatedRepresentation
 	 */
-	protected function paginate(Paginator $paginator)
+	protected function paginate(HalApiRequestParameters $parameters, Paginator $paginator): HalApiPaginatedRepresentation
 	{
-		return $this->representationFactory->paginated($this->self, $this->parent, $paginator, $this->transformer, static::getRelation(RouteHelper::SHOW));
+		$self = $parameters->getSelf();
+		$parent = $parameters->getParent();
+		$relation = static::getRelation(RouteHelper::SHOW);
+
+		return $this->representationFactory->paginated($self, $parent, $paginator, $this->transformer, $relation);
 	}
 
 	/**
 	 * @inheritdoc
 	 */
-	public function index()
+	public function index(HalApiRequestParameters $parameters): Response
 	{
-		/** @var Model $model */
-		$model = $this->model;
-		$paginator = $model::paginate($this->perPage);
+		$paginator = $this->repository->paginate($parameters->getPage(), $parameters->getPerPage());
 
-		return $this->responseFactory->json($this->paginate($paginator)->build());
+		return $this->responseFactory->json($this->paginate($parameters, $paginator)->build());
 	}
 
 	/**
 	 * @inheritdoc
 	 */
-	public function show($model)
+	public function show(HalApiRequestParameters $parameters, Model $model): Response
 	{
-		/** @var Model $model */
 		return $this->responseFactory->json($this->transformer->item($model)->build());
 	}
 
 	/**
-	 * POST and PUT requests must contain all attributes.
-	 * This method returns all fillable attributes which are missing.
-	 *
-	 * @param Model $model
-	 * @return array
-	 */
-	protected function getMissingUpdateAttributes(Model $model)
-	{
-		$keys = array_keys($this->body->getArray());
-		$columnNames = $this->schemaBuilder->getColumnListing($model->getTable());
-		$attributes = [];
-
-		foreach ($columnNames as $column) {
-			if ($model->isFillable($column) && !in_array($column, $keys)) {
-				$attributes[] = $column;
-			}
-		}
-
-		return $attributes;
-	}
-
-	/**
 	 * @inheritdoc
 	 */
-	public function store()
+	public function store(HalApiRequestParameters $parameters): Response
 	{
-		/** @var Model $model */
-		$model = new $this->model;
-		$missingAttributes = $this->getMissingUpdateAttributes($model);
+		$missingAttributes = $this->repository->getMissingFillableAttributes($parameters->getBody()->keys());
 
 		if (!empty($missingAttributes)) {
 			throw new BadPostRequestException('POST requests must contain all attributes. Failed for: ' . join(',', $missingAttributes));
 		}
 
-		try {
-			$model->fill($this->body->getArray())->save();
-		} catch (Exception $e) {
-			throw new DatabaseSaveException('Model could not be created.', 0, $e);
-		}
+		$model = $this->repository->create($parameters->getBody()->getArray());
 
-		return $this->show($model)->setStatusCode(Response::HTTP_CREATED);
+		return $this->show($parameters, $model)->setStatusCode(Response::HTTP_CREATED);
 	}
 
 	/**
 	 * @inheritdoc
 	 */
-	public function update($model)
+	public function update(HalApiRequestParameters $parameters, $model): Response
 	{
 		/** @var Model $model */
 		if (!($model instanceof Model)) {
 			$id = $model;
-			$model = new $this->model;
+			$model = $this->repository->create();
 			$model->{$model->getKeyName()} = $id;
 		}
 
-		switch ($this->request->getMethod()) {
+		switch ($parameters->getRequest()->getMethod()) {
 			case Request::METHOD_PUT:
-				$missingAttributes = $this->getMissingUpdateAttributes($model);
+				$missingAttributes = $this->repository->getMissingFillableAttributes($parameters->getBody()->keys());
 
 				if (!empty($missingAttributes)) {
 					throw new BadPutRequestException('PUT requests must contain all attributes. Failed for: ' . join(',', $missingAttributes));
 				}
 
 				$existed = $model->exists;
+				$model = $this->repository->save($model->fill($parameters->getBody()->getArray()));
 
-				try {
-					$model->fill($this->body->getArray())->save();
-				} catch (Exception $e) {
-					throw new DatabaseSaveException('Model could not be saved.', 0, $e);
-				}
-
-				return $existed ? $this->show($model) : $this->show($model)->setStatusCode(Response::HTTP_CREATED);
+				return $existed ? $this->show($parameters, $model) : $this->show($parameters, $model)->setStatusCode(Response::HTTP_CREATED);
 			case Request::METHOD_PATCH:
-				try {
-					$model->fill($this->body->getArray())->save();
-				} catch (Exception $e) {
-					throw new DatabaseSaveException('Model could not be updated.', 0, $e);
-				}
+				$this->repository->save($model->fill($parameters->getBody()->getArray()));
 
-				return $this->show($model);
+				return $this->show($parameters, $model);
 			default:
 				return $this->responseFactory->make('', Response::HTTP_METHOD_NOT_ALLOWED);
 		}
@@ -271,16 +158,11 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	/**
 	 * @inheritdoc
 	 */
-	public function destroy($model)
+	public function destroy(HalApiRequestParameters $parameters, Model $model): Response
 	{
-		try {
-			/** @var Model $model */
-			$model->delete();
-		} catch (Exception $e) {
-			throw new DatabaseConflictException('Model could not be deleted: ' . $model->getKey());
-		}
+		$this->repository->remove($model);
 
-		return $this->responseFactory->json('', Response::HTTP_NO_CONTENT);
+		return $this->responseFactory->make('', Response::HTTP_NO_CONTENT);
 	}
 
 }

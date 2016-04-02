@@ -1,7 +1,6 @@
 <?php namespace Jarischaefer\HalApi\Representations;
 
 use InvalidArgumentException;
-use Jarischaefer\HalApi\Controllers\HalApiController;
 use Jarischaefer\HalApi\Helpers\Checks;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
 use Jarischaefer\HalApi\Routing\HalApiLink;
@@ -73,19 +72,16 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	/**
 	 * @inheritdoc
 	 */
-	public function setAutoSubordinateRoutes($flag)
+	public function setAutoSubordinateRoutes(bool $flag)
 	{
-		$this->autoSubordinateRoutes = (bool)$flag;
+		$this->autoSubordinateRoutes = $flag;
 	}
 
 	/**
 	 * @inheritdoc
 	 */
-	public function add($key, $value)
+	public function add(string $key, $value): HalApiRepresentation
 	{
-		if (!is_string($key)) {
-			throw new InvalidArgumentException('key must be a string');
-		}
 		if (in_array($key, self::$reservedApiKeys)) {
 			throw new InvalidArgumentException('key is restricted.');
 		}
@@ -98,7 +94,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	/**
 	 * @inheritdoc
 	 */
-	public function meta($key, $value)
+	public function meta(string $key, $value): HalApiRepresentation
 	{
 		$this->meta[$key] = $value;
 
@@ -108,7 +104,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	/**
 	 * @inheritdoc
 	 */
-	public function metaFromArray(array $meta)
+	public function metaFromArray(array $meta): HalApiRepresentation
 	{
 		$this->meta = array_merge_recursive($meta, $this->meta);
 
@@ -118,7 +114,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	/**
 	 * @inheritdoc
 	 */
-	public function data($key, $value)
+	public function data(string $key, $value): HalApiRepresentation
 	{
 		$this->data[$key] = $value;
 
@@ -128,7 +124,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	/**
 	 * @inheritdoc
 	 */
-	public function dataFromArray(array $data)
+	public function dataFromArray(array $data): HalApiRepresentation
 	{
 		$this->data = array_merge_recursive($data, $this->data);
 
@@ -138,7 +134,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	/**
 	 * @inheritdoc
 	 */
-	public function link($relation, HalApiLink $link)
+	public function link(string $relation, HalApiLink $link): HalApiRepresentation
 	{
 		if (!is_string($relation)) {
 			throw new InvalidArgumentException('relation must be a string, got: ' . gettype($relation));
@@ -152,7 +148,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	/**
 	 * @inheritdoc
 	 */
-	public function links(array $links)
+	public function links(array $links): HalApiRepresentation
 	{
 		if (empty($links)) {
 			return $this;
@@ -168,13 +164,9 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	/**
 	 * @inheritdoc
 	 */
-	public function embedSingle($relation, HalApiRepresentation $api)
+	public function embedSingle(string $relation, HalApiRepresentation $representation): HalApiRepresentation
 	{
-		if (!is_string($relation)) {
-			throw new InvalidArgumentException('relation must be a string');
-		}
-
-		$this->embedded[$relation] = $api;
+		$this->embedded[$relation] = $representation;
 
 		return $this;
 	}
@@ -182,13 +174,9 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	/**
 	 * @inheritdoc
 	 */
-	public function embedMulti($relation, HalApiRepresentation $api)
+	public function embedMulti(string $relation, HalApiRepresentation $representation): HalApiRepresentation
 	{
-		if (!is_string($relation)) {
-			throw new InvalidArgumentException('relation must be a string');
-		}
-
-		$this->embedded[$relation][] = $api;
+		$this->embedded[$relation][] = $representation;
 
 		return $this;
 	}
@@ -196,18 +184,14 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	/**
 	 * @inheritdoc
 	 */
-	public function embedFromArray(array $embed)
+	public function embedFromArray(array $embed): HalApiRepresentation
 	{
-		if (empty($embed)) {
-			return $this;
-		}
-
 		foreach ($embed as $relation => $item) {
 			if (is_array($item)) {
 				Checks::arrayType($item, HalApiRepresentation::class);
 
-				foreach ($item as $api) {
-					$this->embedMulti($relation, $api);
+				foreach ($item as $representation) {
+					$this->embedMulti($relation, $representation);
 				}
 			} else {
 				$this->embedSingle($relation, $item);
@@ -218,23 +202,23 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	}
 
 	/**
-	 * @param HalApiLink $link
+	 * @param HalApiLink $parent
 	 */
-	private function addSubordinateRoutes(HalApiLink $link)
+	private function addSubordinateRoutes(HalApiLink $parent)
 	{
-		$subordinateRoutes = $this->routeHelper->subordinates($link->getRoute());
+		$subordinateRoutes = $this->routeHelper->subordinates($parent->getRoute());
 
 		foreach ($subordinateRoutes as $subRoute) {
-			/** @var HalApiController $class */
-			list($class, $method) = explode('@', $subRoute->getActionName());
-			$this->link($class::getRelation($method), $this->linkFactory->create($subRoute, $link->getParameters()));
+			$relation = RouteHelper::relation($subRoute);
+			$link = $this->linkFactory->create($subRoute, $parent->getParameters());
+			$this->link($relation, $link);
 		}
 	}
 
 	/**
 	 * @inheritdoc
 	 */
-	public function build()
+	public function build(): array
 	{
 		$build = $this->root;
 
@@ -279,7 +263,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	/**
 	 * @inheritdoc
 	 */
-	public function __toString()
+	public function __toString(): string
 	{
 		return json_encode($this->build());
 	}

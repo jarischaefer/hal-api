@@ -1,8 +1,6 @@
 <?php namespace Jarischaefer\HalApi\Controllers;
 
 use Illuminate\Contracts\Routing\ResponseFactory;
-use Illuminate\Foundation\Application;
-use Illuminate\Http\Request;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
 use Jarischaefer\HalApi\Representations\RepresentationFactory;
 use Jarischaefer\HalApi\Routing\LinkFactory;
@@ -14,10 +12,6 @@ use Jarischaefer\HalApi\Routing\LinkFactory;
 class HalApiControllerParameters
 {
 
-	/**
-	 * @var Application
-	 */
-	private $application;
 	/**
 	 * @var LinkFactory
 	 */
@@ -34,32 +28,25 @@ class HalApiControllerParameters
 	 * @var RouteHelper
 	 */
 	private $routeHelper;
-	/**
-	 * @var Request
-	 */
-	private $request;
 
-	public function __construct(Application $application, LinkFactory $linkFactory, RepresentationFactory $representationFactory, ResponseFactory $responseFactory, RouteHelper $routeHelper, Request $request) {
-		$this->application = $application;
+	/**
+	 * @param LinkFactory $linkFactory
+	 * @param RepresentationFactory $representationFactory
+	 * @param ResponseFactory $responseFactory
+	 * @param RouteHelper $routeHelper
+	 */
+	public function __construct(LinkFactory $linkFactory, RepresentationFactory $representationFactory, ResponseFactory $responseFactory, RouteHelper $routeHelper)
+	{
 		$this->linkFactory = $linkFactory;
 		$this->representationFactory = $representationFactory;
 		$this->responseFactory = $responseFactory;
 		$this->routeHelper = $routeHelper;
-		$this->request = $request;
-	}
-
-	/**
-	 * @return Application
-	 */
-	public function getApplication()
-	{
-		return $this->application;
 	}
 
 	/**
 	 * @return LinkFactory
 	 */
-	public function getLinkFactory()
+	public function getLinkFactory(): LinkFactory
 	{
 		return $this->linkFactory;
 	}
@@ -67,7 +54,7 @@ class HalApiControllerParameters
 	/**
 	 * @return RepresentationFactory
 	 */
-	public function getRepresentationFactory()
+	public function getRepresentationFactory(): RepresentationFactory
 	{
 		return $this->representationFactory;
 	}
@@ -75,7 +62,7 @@ class HalApiControllerParameters
 	/**
 	 * @return ResponseFactory
 	 */
-	public function getResponseFactory()
+	public function getResponseFactory(): ResponseFactory
 	{
 		return $this->responseFactory;
 	}
@@ -83,17 +70,9 @@ class HalApiControllerParameters
 	/**
 	 * @return RouteHelper
 	 */
-	public function getRouteHelper()
+	public function getRouteHelper(): RouteHelper
 	{
 		return $this->routeHelper;
-	}
-
-	/**
-	 * @return Request
-	 */
-	public function getRequest()
-	{
-		return $this->request;
 	}
 
 }

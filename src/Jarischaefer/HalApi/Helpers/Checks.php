@@ -15,10 +15,10 @@ final class Checks
 
 	/**
 	 * @param array $array
-	 * @param $class
+	 * @param string $class
 	 * @throws Exception
 	 */
-	public static function arrayType(array $array, $class)
+	public static function arrayType(array $array, string $class)
 	{
 		if (!class_exists($class) && !interface_exists($class)) {
 			throw new Exception('Class not found');

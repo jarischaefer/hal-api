@@ -43,7 +43,7 @@ class HalApiETagMiddleware
 	 * @param string $responseTag
 	 * @return bool
 	 */
-	private static function eTagsMatch(Request $request, $responseTag)
+	private static function eTagsMatch(Request $request, string $responseTag): bool
 	{
 		$requestTags = str_replace('"', '', $request->getETags());
 

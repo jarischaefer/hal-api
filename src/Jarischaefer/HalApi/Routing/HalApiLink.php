@@ -12,34 +12,34 @@ interface HalApiLink
 	/**
 	 * @return Route
 	 */
-	public function getRoute();
+	public function getRoute(): Route;
 
 	/**
 	 * @return array
 	 */
-	public function getParameters();
+	public function getParameters(): array;
 
 	/**
 	 * @param bool $encoded
 	 * @return string
 	 */
-	public function getLink($encoded = false);
+	public function getLink($encoded = false): string;
 
 	/**
 	 * @return bool
 	 */
-	public function isTemplated();
+	public function isTemplated(): bool;
 
 	/**
 	 * @return string
 	 */
-	public function getQueryString();
+	public function getQueryString(): string;
 
 	/**
 	 * Returns the link's array representation.
 	 *
 	 * @return array
 	 */
-	public function build();
+	public function build(): array;
 
 }

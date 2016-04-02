@@ -12,9 +12,9 @@ class TestController extends HalApiController
 	/**
 	 * @inheritdoc
 	 */
-	public static function getRelation($action = null)
+	public static function getRelationName(): string
 	{
-		return $action ? 'test@' . $action : 'test';
+		return 'test';
 	}
 
 }
@@ -26,13 +26,12 @@ class RouteHelperTest extends TestCase
 	{
 		$helper = $this->createRouteHelper();
 		$helper->resource('test', TestController::class)->done();
-
 		$routes = $helper->getRouter()->getRoutes();
 
 		$found = false;
 		/** @var Route $route */
 		foreach ($routes as $route) {
-			if ($route->getUri() == 'test?' . RouteHelper::PAGINATION_URI) {
+			if (strcmp($route->getUri(), 'test?' . RouteHelper::PAGINATION_URI) === 0) {
 				$found = true;
 				break;
 			}
@@ -40,11 +39,11 @@ class RouteHelperTest extends TestCase
 
 		$this->assertTrue($found, 'Did not find pagination uri in routes list.');
 
-		$this->assertNotNull($routes->getByAction(TestController::actionName('index')), 'index route was not found.');
-		$this->assertNotNull($routes->getByAction(TestController::actionName('show')), 'show route was not found.');
-		$this->assertNotNull($routes->getByAction(TestController::actionName('store')), 'store route was not found.');
-		$this->assertNotNull($routes->getByAction(TestController::actionName('update')), 'update route was not found.');
-		$this->assertNotNull($routes->getByAction(TestController::actionName('destroy')), 'destroy route was not found.');
+		$this->assertNotNull($routes->getByAction(TestController::actionName(RouteHelper::INDEX)), 'index route was not found.');
+		$this->assertNotNull($routes->getByAction(TestController::actionName(RouteHelper::SHOW)), 'show route was not found.');
+		$this->assertNotNull($routes->getByAction(TestController::actionName(RouteHelper::STORE)), 'store route was not found.');
+		$this->assertNotNull($routes->getByAction(TestController::actionName(RouteHelper::UPDATE)), 'update route was not found.');
+		$this->assertNotNull($routes->getByAction(TestController::actionName(RouteHelper::DESTROY)), 'destroy route was not found.');
 	}
 
 	public function testGetRouteByAction()
@@ -54,13 +53,6 @@ class RouteHelperTest extends TestCase
 
 		$test = $helper->byAction(TestController::actionName('test'));
 		$this->assertEquals($test->getActionName(), TestController::actionName('test'));
-
-		try {
-			$helper->byAction(null);
-			$this->fail('Route should not have been found.');
-		} catch (Exception $e) {
-			// expected
-		}
 
 		try {
 			$helper->byAction('');

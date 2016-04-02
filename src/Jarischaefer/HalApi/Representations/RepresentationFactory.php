@@ -16,7 +16,7 @@ interface RepresentationFactory
 	 * @param HalApiLink $parent
 	 * @return HalApiRepresentation
 	 */
-	public function create(HalApiLink $self, HalApiLink $parent);
+	public function create(HalApiLink $self, HalApiLink $parent): HalApiRepresentation;
 
 	/**
 	 * @param HalApiLink $self
@@ -26,6 +26,6 @@ interface RepresentationFactory
 	 * @param string $relation
 	 * @return HalApiPaginatedRepresentation
 	 */
-	public function paginated(HalApiLink $self, HalApiLink $parent, Paginator $paginator, HalApiTransformerContract $transformer, $relation);
+	public function paginated(HalApiLink $self, HalApiLink $parent, Paginator $paginator, HalApiTransformerContract $transformer, string $relation): HalApiPaginatedRepresentation;
 
 }

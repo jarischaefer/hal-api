@@ -25,7 +25,7 @@ class LinkFactoryImpl implements LinkFactory
 	/**
 	 * @inheritdoc
 	 */
-	public function create(Route $route, $parameters = [], $queryString = '')
+	public function create(Route $route, $parameters = [], string $queryString = ''): HalApiLink
 	{
 		return new HalApiLinkImpl($this->urlGenerator, $route, $parameters, $queryString);
 	}

@@ -35,7 +35,7 @@ class RepresentationFactoryImpl implements RepresentationFactory
 	/**
 	 * @inheritdoc
 	 */
-	public function create(HalApiLink $self, HalApiLink $parent)
+	public function create(HalApiLink $self, HalApiLink $parent): HalApiRepresentation
 	{
 		return new HalApiRepresentationImpl($this->linkFactory, $this->routeHelper, $self, $parent);
 	}
@@ -43,7 +43,7 @@ class RepresentationFactoryImpl implements RepresentationFactory
 	/**
 	 * @inheritdoc
 	 */
-	public function paginated(HalApiLink $self, HalApiLink $parent, Paginator $paginator, HalApiTransformerContract $transformer, $relation)
+	public function paginated(HalApiLink $self, HalApiLink $parent, Paginator $paginator, HalApiTransformerContract $transformer, string $relation): HalApiPaginatedRepresentation
 	{
 		return new HalApiPaginatedRepresentationImpl($this->linkFactory, $this->routeHelper, $self, $parent, $paginator, $transformer, $relation);
 	}

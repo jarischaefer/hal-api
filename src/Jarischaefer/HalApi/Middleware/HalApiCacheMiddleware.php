@@ -7,6 +7,7 @@ use Illuminate\Routing\Route;
 use Jarischaefer\HalApi\Caching\CacheFactory;
 use Jarischaefer\HalApi\Caching\HalApiCache;
 use Jarischaefer\HalApi\Controllers\HalApiControllerContract;
+use Jarischaefer\HalApi\Helpers\RouteHelper;
 
 /**
  * Class HalApiCacheMiddleware
@@ -62,12 +63,13 @@ class HalApiCacheMiddleware
 			return $next($request);
 		}
 
-		$class = explode('@', $route->getActionName())[0];
+		$actionName = $route->getActionName();
 
-		if (!is_subclass_of($class, HalApiControllerContract::class)) {
+		if (!RouteHelper::isValidActionName($actionName)) {
 			return $next($request);
 		}
 
+		$class = explode(RouteHelper::ACTION_NAME_DELIMITER, $actionName)[0];
 		/** @var HalApiControllerContract $class */
 		$cache = $class::getCache($this->cacheFactory);
 
@@ -93,7 +95,7 @@ class HalApiCacheMiddleware
 	 * @param Request $request
 	 * @return string
 	 */
-	private function generateKey(HalApiCache $cache, Request $request)
+	private function generateKey(HalApiCache $cache, Request $request): string
 	{
 		$method = $request->getMethod();
 		$uri = $request->getUri();

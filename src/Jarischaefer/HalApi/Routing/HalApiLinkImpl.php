@@ -34,10 +34,10 @@ class HalApiLinkImpl implements HalApiLink
 	/**
 	 * @param HalApiUrlGenerator $urlGenerator
 	 * @param Route $route
-	 * @param array $parameters
+	 * @param array|mixed $parameters
 	 * @param string $queryString
 	 */
-	public function __construct(HalApiUrlGenerator $urlGenerator, Route $route, $parameters = [], $queryString = '')
+	public function __construct(HalApiUrlGenerator $urlGenerator, Route $route, $parameters = [], string $queryString = '')
 	{
 		$this->route = $route;
 		$this->parameters = is_array($parameters) ? $parameters : [$parameters];
@@ -53,7 +53,7 @@ class HalApiLinkImpl implements HalApiLink
 	/**
 	 * @return Route
 	 */
-	public function getRoute()
+	public function getRoute(): Route
 	{
 		return $this->route;
 	}
@@ -61,7 +61,7 @@ class HalApiLinkImpl implements HalApiLink
 	/**
 	 * @return array
 	 */
-	public function getParameters()
+	public function getParameters(): array
 	{
 		return $this->parameters;
 	}
@@ -70,7 +70,7 @@ class HalApiLinkImpl implements HalApiLink
 	 * @param bool $encoded
 	 * @return string
 	 */
-	public function getLink($encoded = false)
+	public function getLink($encoded = false): string
 	{
 		return $encoded ? $this->link : rawurldecode($this->link);
 	}
@@ -78,7 +78,7 @@ class HalApiLinkImpl implements HalApiLink
 	/**
 	 * @return bool
 	 */
-	public function isTemplated()
+	public function isTemplated(): bool
 	{
 		return $this->templated;
 	}
@@ -86,7 +86,7 @@ class HalApiLinkImpl implements HalApiLink
 	/**
 	 * @return string
 	 */
-	public function getQueryString()
+	public function getQueryString(): string
 	{
 		return $this->queryString;
 	}
@@ -96,7 +96,7 @@ class HalApiLinkImpl implements HalApiLink
 	 *
 	 * @return array
 	 */
-	public function build()
+	public function build(): array
 	{
 		return [
 			'href' => $this->getLink(),
@@ -107,7 +107,7 @@ class HalApiLinkImpl implements HalApiLink
 	/**
 	 * @return string
 	 */
-	public function __toString()
+	public function __toString(): string
 	{
 		return json_encode($this->build());
 	}
@@ -115,13 +115,18 @@ class HalApiLinkImpl implements HalApiLink
 	/**
 	 * @param Route $route
 	 * @param UrlGenerator $urlGenerator
-	 * @param $queryString
+	 * @param string $queryString
 	 * @return bool
 	 */
-	private static function evaluateTemplated(Route $route, UrlGenerator $urlGenerator, $queryString)
+	private static function evaluateTemplated(Route $route, UrlGenerator $urlGenerator, string $queryString): bool
 	{
 		// Does the route have named parameters? http://example.com/users/{users}
 		if (count($route->parameterNames())) {
+			return true;
+		}
+
+		// Does the query string contain any parameters?
+		if (preg_match('/\?.*=\{.*?\}/', $queryString)) {
 			return true;
 		}
 
@@ -132,11 +137,6 @@ class HalApiLinkImpl implements HalApiLink
 			return true;
 		}
 
-		// Does the query string contain any parameters?
-		if (preg_match('/\?.*=\{.*?\}/', $queryString)) {
-			return true;
-		}
-
 		return false;
 	}
 
@@ -144,7 +144,7 @@ class HalApiLinkImpl implements HalApiLink
 	 * @param string $queryString
 	 * @return string
 	 */
-	private static function createQueryString($queryString)
+	private static function createQueryString(string $queryString): string
 	{
 		return empty($queryString) ? '' : ($queryString[0] === '?' ? substr($queryString, 1) : $queryString);
 	}

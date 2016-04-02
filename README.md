@@ -4,7 +4,7 @@ Enhances your HATEOAS experience by automating common tasks.
 
 # About
 
-This package is based on Laravel 5.
+This package is based on Laravel 5.2.
 It is designed to automate common tasks in RESTful API programming.
 These docs might not always be in sync with all the changes.
 
@@ -12,7 +12,7 @@ These docs might not always be in sync with all the changes.
 
 ## Requirements
 
-Requires Laravel 5.2 and PHP 5.6 or PHP 7.0.
+Requires Laravel 5.2 and PHP 7.0.
 
 ## Composer
 
@@ -27,7 +27,8 @@ or by including the following in your composer.json.
 	"jarischaefer/hal-api": "dev-master"
 }
 ```
-This is going to install the more stable master version.
+Check the releases page for a list of available versions.
+
 
 ## Service Provider
 
@@ -48,15 +49,83 @@ Register the Service Provider in your config/compile.php file.
 	Jarischaefer\HalApi\Providers\HalApiServiceProvider::class,
 ]
 ```
-The next time you generate an optimized classloader using artisan,
-the optimized file will contain the contents of this package as well.
+
+Run `php artisan optimize --force` to compile an optimized classloader.
+
 
 # Usage
 
+## Simple Controller
+
+This type of controller is not backed by a model and provides no CRUD operations.
+A typical use case is an entry point for the API.
+The following controller should be routed to the root of the API and
+lists all relationships.
+
+```php
+class HomeController extends HalApiController
+{
+
+	public function index(HalApiRequestParameters $parameters)
+	{
+		return $this->responseFactory->json($this->createResponse($parameters)->build());
+	}
+
+}
+```
+
+## Resource Controller
+
+Resource controllers require three additional components:
+
+* Model: Resources' data is contained within models
+* Repository: Repositories retrieve and store models
+* Transformer: Transforms models into HAL representations
+
+```php
+class UsersController extends HalApiResourceController
+{
+
+	public static function getRelationName(): string
+	{
+		return 'users';
+	}
+
+	public function __construct(HalApiControllerParameters $parameters, UserTransformer $transformer, UserRepository $repository)
+	{
+		parent::__construct($parameters, $transformer, $repository);
+	}
+
+	public function posts(HalApiRequestParameters $parameters, PostsController $postsController, User $user): Response
+	{
+		$posts = $user->posts()->paginate($parameters->getPerPage());
+		$response = $postsController->paginate($parameters, $posts)->build();
+
+		return $this->responseFactory->json($response);
+	}
+
+}
+
+class PostsController extends HalApiResourceController
+{
+
+	public static function getRelationName(): string
+	{
+		return 'posts';
+	}
+
+	public function __construct(HalApiControllerParameters $parameters, PostTransformer $transformer, PostRepository $repository)
+	{
+		parent::__construct($parameters, $transformer, $repository);
+	}
+
+}
+```
+
 ## Models
 
-The following is a simple relationship with three tables.
-The user has two One-To-Many relationships with both Posts and Comments.
+The following is a simple relationship with two tables.
+User has a One-To-Many relationship with Post.
 
 ```php
 class User extends Model implements AuthenticatableContract, CanResetPasswordContract
@@ -76,11 +145,6 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
 		return $this->hasMany(Post::class);
 	}
 
-	public function comments()
-	{
-		return $this->hasMany(Comment::class);
-	}
-
 }
 
 class Post extends Model
@@ -94,15 +158,31 @@ class Post extends Model
 	}
 
 }
+```
 
-class Comment extends Model
+## Repository
+
+You may create an [Eloquent](https://laravel.com/docs/5.2/eloquent)-compatible
+repository by extending **HalApiEloquentRepository** and implementing
+its getModelClass() method.
+
+```php
+class UserRepository extends HalApiEloquentRepository
 {
 
-	// ...
-
-	public function user()
+	public static function getModelClass(): string
 	{
-		return $this->belongsTo(User::class);
+		return User::class;
+	}
+
+}
+
+class PostRepository extends HalApiEloquentRepository
+{
+
+	public static function getModelClass(): string
+	{
+		return Post::class;
 	}
 
 }
@@ -146,16 +226,6 @@ class PostTransformer extends HalApiTransformer
 			'text' => (string)$model->text,
 			'user_id' => (int)$model->user_id,
 		];
-	}
-
-}
-
-class CommentTransformer extends HalApiTransformer
-{
-
-	public function transform(Model $model)
-	{
-		// ...
 	}
 
 }
@@ -259,10 +329,10 @@ class PostTransformer extends HalApiTransformer
 
 	public function __construct(LinkFactory $linkFactory, RepresentationFactory $representationFactory, RouteHelper $routeHelper, Route $self, Route $parent, UserTransformer $userTransformer)
 	{
-			parent::__construct($linkFactory, $representationFactory, $routeHelper, $self, $parent);
+		parent::__construct($linkFactory, $representationFactory, $routeHelper, $self, $parent);
 
-			$this->userTransformer = $userTransformer;
-			$this->userRelation = UsersController::getRelation(RouteHelper::SHOW);
+		$this->userTransformer = $userTransformer;
+		$this->userRelation = UsersController::getRelation(RouteHelper::SHOW);
 	}
 
 	public function transform(Model $model)
@@ -279,11 +349,11 @@ class PostTransformer extends HalApiTransformer
 
 	protected function getEmbedded(Model $model)
 	{
-			/** @var Post $model */
+		/** @var Post $model */
 
-			return [
-				$this->userRelation => $this->userTransformer->item($model->user),
-			];
+		return [
+			$this->userRelation => $this->userTransformer->item($model->user),
+		];
 	}
 
 }
@@ -307,10 +377,6 @@ Notice the "users.show" relation in the _emedded field.
 		"parent": {
 			"href": "http://hal-api.development/posts",
 			"templated": false
-		},
-		"users.show": {
-			"href": "http://hal-api.development/users/456",
-			"templated": true
 		},
 		"posts.update": {
 			"href": "http://hal-api.development/posts/123",
@@ -344,10 +410,6 @@ Notice the "users.show" relation in the _emedded field.
 					"href": "http://hal-api.development/users/456/posts",
 					"templated": true
 				},
-				"users.comments": {
-					"href": "http://hal-api.development/users/456/comments",
-					"templated": true
-				},
 				"users.update": {
 					"href": "http://hal-api.development/users/456",
 					"templated": true
@@ -364,102 +426,9 @@ Notice the "users.show" relation in the _emedded field.
 }
 ```
 
-## Simple Controller
-
-```php
-class HomeController extends HalApiController
-{
-
-	public function index()
-	{
-		return $this->responseFactory->json(
-			$this->createResponse()->build() // Simply return the API
-		);
-	}
-
-}
-```
-
-## Resource Controller
-
-A resource controller consists of three components: **Controller**, **Transformer** and **Model**.
-The model holds data, typically a table row. This data can be transformed to a HAL response using a transformer.
-Finally, the controller handles all requests for a given resource and utilizes models and transformers to form its responses.
-
-```php
-class UsersController extends HalApiResourceController
-{
-
-	const RELATION = 'users';
-
-	public static function getModel()
-	{
-		return User::class;
-	}
-
-	public static function getRelation($action = null)
-	{
-		return $action ? self::RELATION . '.' . $action : self::RELATION;
-	}
-
-	public function posts(User $user)
-	{
-		$posts = $user->posts()->paginate($this->perPage);
-		/** @var PostsController $postsController */
-		$postsController = $this->app->make(PostsController::class);
-
-		return $this->responseFactory->json($postsController->paginate($posts)->build());
-	}
-
-	public function comments(User $user)
-	{
-		$comments = $user->comments()->paginate($this->perPage);
-		/** @var CommentsController $commentsController */
-		$commentsController = $this->app->make(CommentsController::class);
-
-		return $this->responseFactory->json($commentsController->paginate($comments)->build());
-	}
-
-}
-
-class PostsController extends HalApiResourceController
-{
-
-	const RELATION = 'posts';
-
-	public static function getModel()
-	{
-		return Post::class;
-	}
-
-	public static function getRelation($action = null)
-	{
-		return $action ? self::RELATION . '.' . $action : self::RELATION;
-	}
-
-}
-
-class CommentsController extends HalApiResourceController
-{
-
-	const RELATION = 'comments';
-
-	public static function getModel()
-	{
-		return Comment::class;
-	}
-
-	public static function getRelation($action = null)
-	{
-		return $action ? self::RELATION . '.' . $action : self::RELATION;
-	}
-
-}
-```
-
 ## Dependency wiring
 
-It is recommendend that you wire the transformers' and controllers' dependencies in a Service Provider:
+It is recommendend that you wire the transformers' dependencies in a Service Provider:
 
 ```php
 class MyServiceProvider extends ServiceProvider
@@ -467,58 +436,25 @@ class MyServiceProvider extends ServiceProvider
 
 	public function boot(Router $router)
 	{
-		$linkFactory = $this->app->make(LinkFactory::class);
-		$representationFactory = $this->app->make(RepresentationFactory::class);
-		$routeHelper = $this->app->make(RouteHelper::class);
-
-		$this->app->singleton(UserTransformer::class, function () use ($linkFactory, $representationFactory, $routeHelper) {
+		$this->app->singleton(UserTransformer::class, function (Illuminate\Contracts\Foundation\Application $application) {
+			$linkFactory = $application->make(LinkFactory::class);
+			$representationFactory = $application->make(RepresentationFactory::class);
+			$routeHelper = $application->make(RouteHelper::class);
 			$self = $routeHelper->byAction(UsersController::actionName(RouteHelper::SHOW));
 			$parent = $routeHelper->parent($self);
 
 			return new UserTransformer($linkFactory, $representationFactory, $routeHelper, $self, $parent);
 		});
 
-		$this->app->singleton(PostTransformer::class, function (Illuminate\Contracts\Foundation\Application $application) use ($linkFactory, $representationFactory, $routeHelper) {
+		$this->app->singleton(PostTransformer::class, function (Illuminate\Contracts\Foundation\Application $application) {
+			$linkFactory = $application->make(LinkFactory::class);
+			$representationFactory = $application->make(RepresentationFactory::class);
+			$routeHelper = $application->make(RouteHelper::class);
 			$self = $routeHelper->byAction(PostsController::actionName(RouteHelper::SHOW));
 			$parent = $routeHelper->parent($self);
 			$userTransformer = $application->make(UserTransformer::class);
 
 			return new PostTransformer($linkFactory, $representationFactory, $routeHelper, $self, $parent, $userTransformer);
-		});
-
-		$this->app->singleton(CommentTransformer::class, function (Illuminate\Contracts\Foundation\Application $application) use ($linkFactory, $representationFactory, $routeHelper) {
-			$self = $routeHelper->byAction(PostsController::actionName(RouteHelper::SHOW));
-			$parent = $routeHelper->parent($self);
-			$userTransformer = $application->make(UserTransformer::class);
-
-			return new CommentTransformer($linkFactory, $representationFactory, $routeHelper, $self, $parent, $userTransformer);
-		});
-	}
-
-	public function register()
-	{
-		$this->app->singleton(UsersController::class, function (Illuminate\Contracts\Foundation\Application $application) {
-			$parameters = $application->make(HalApiControllerParameters::class);
-			$transformer = $application->make(UserTransformer::class);
-			$schemaBuilder = $application->make(Illuminate\Database\Schema\Builder::class);
-
-			return new UsersController($parameters, $transformer, $schemaBuilder);
-		});
-
-		$this->app->singleton(PostsController::class, function (Illuminate\Contracts\Foundation\Application $application) {
-			$parameters = $application->make(HalApiControllerParameters::class);
-			$transformer = $application->make(PostTransformer::class);
-			$schemaBuilder = $application->make(Illuminate\Database\Schema\Builder::class);
-
-			return new PostsController($parameters, $transformer, $schemaBuilder);
-		});
-
-		$this->app->singleton(CommentsController::class, function (Illuminate\Contracts\Foundation\Application $application) {
-			$parameters = $application->make(HalApiControllerParameters::class);
-			$transformer = $application->make(CommentTransformer::class);
-			$schemaBuilder = $application->make(Illuminate\Database\Schema\Builder::class);
-
-			return new CommentsController($parameters, $transformer, $schemaBuilder);
 		});
 	}
 
@@ -533,15 +469,10 @@ RouteHelper::make($router)
 
 	->resource('users', UsersController::class) // Start a new resource block
 		->get('posts', 'posts') // Link GET /users/{users}/posts to the posts method in UsersController
-		->get('comments', 'comments') // Links GET /users/{users}/comments to the comments method in UsersController
 	->done() // Close the resource block
 
 	->resource('posts', PostsController::class)
-	->done()
-
-	->resource('comments', CommentsController::class)
-	->done()
-
+	->done();
 ```
 
 ## RouteServiceProvider
@@ -556,10 +487,9 @@ public function boot(Router $router)
 {
 	parent::boot($router);
 
-	$callback = HalApiResourceController::getModelBindingCallback();
+	$callback = RouteHelper::getModelBindingCallback();
 	$router->model('users', User::class, $callback);
 	$router->model('posts', Post::class, $callback);
-	$router->model('comments', Comment::class, $callback);
 }
 ```
 
@@ -633,10 +563,6 @@ class Handler extends ExceptionHandler
 			"href": "http://hal-api.development/users/123/posts",
 			"templated": true
 		},
-		"users.comments": {
-			"href": "http://hal-api.development/users/123/comments",
-			"templated": true
-		},
 		"users.update": {
 			"href": "http://hal-api.development/users/123",
 			"templated": true
@@ -668,10 +594,6 @@ class Handler extends ExceptionHandler
 			"href": "http://hal-api.development/users/{users}/posts",
 			"templated": true
 		},
-		"users.comments": {
-			"href": "http://hal-api.development/users/{users}/comments",
-			"templated": true
-		},
 		"users.show": {
 			"href": "http://hal-api.development/users/{users}",
 			"templated": true
@@ -689,7 +611,7 @@ class Handler extends ExceptionHandler
 			"templated": true
 		},
 		"users.posts": {
-			"href": "http:/hal-api.development/users/{users}/posts",
+			"href": "http://hal-api.development/users/{users}/posts",
 			"templated": true
 		},
 		"first": {
@@ -729,10 +651,6 @@ class Handler extends ExceptionHandler
 						"href": "http://hal-api.development/users/123/posts",
 						"templated": true
 					},
-					"users.comments": {
-						"href": "http://hal-api.development/users/123/comments",
-						"templated": true
-					},
 					"users.update": {
 						"href": "http://hal-api.development/users/123",
 						"templated": true
@@ -742,7 +660,7 @@ class Handler extends ExceptionHandler
 						"templated": true
 					},
 					"users.posts": {
-						"href": "http:/hal-api.development/users/123/posts",
+						"href": "http://hal-api.development/users/123/posts",
 						"templated": true
 					}
 				},
@@ -771,10 +689,6 @@ class Handler extends ExceptionHandler
 						"href": "http://hal-api.development/users/456/posts",
 						"templated": true
 					},
-					"users.comments": {
-						"href": "http://hal-api.development/users/456/comments",
-						"templated": true
-					},
 					"users.update": {
 						"href": "http://hal-api.development/users/456",
 						"templated": true
@@ -784,7 +698,7 @@ class Handler extends ExceptionHandler
 						"templated": true
 					},
 					"users.posts": {
-						"href": "http:/hal-api.development/users/456/posts",
+						"href": "http://hal-api.development/users/456/posts",
 						"templated": true
 					}
 				},

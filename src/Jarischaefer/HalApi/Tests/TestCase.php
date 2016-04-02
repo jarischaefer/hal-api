@@ -40,26 +40,20 @@ abstract class TestCase extends \Illuminate\Foundation\Testing\TestCase
 	/**
 	 * @return Router
 	 */
-	protected function createRouter()
+	protected function createRouter(): Router
 	{
 		/** @var Dispatcher $dispatcher */
 		$dispatcher = $this->getMock(Dispatcher::class);
-		$router = new Router($dispatcher, null);
-
-		return $router;
+		return new Router($dispatcher, $this->app);
 	}
 
 	/**
 	 * @param Router|null $router
 	 * @return RouteHelper
 	 */
-	protected function createRouteHelper(Router $router = null)
+	protected function createRouteHelper(Router $router = null): RouteHelper
 	{
-		if ($router === null) {
-			$router = $this->createRouter();
-		}
-
-		return RouteHelper::make($router);
+		return $router ? RouteHelper::make($router) : RouteHelper::make($this->createRouter());
 	}
 
 }

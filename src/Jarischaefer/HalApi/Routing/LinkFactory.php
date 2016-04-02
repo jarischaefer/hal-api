@@ -11,10 +11,10 @@ interface LinkFactory
 
 	/**
 	 * @param Route $route
-	 * @param array $parameters
+	 * @param array|mixed $parameters
 	 * @param string $queryString
 	 * @return HalApiLink
 	 */
-	public function create(Route $route, $parameters = [], $queryString = '');
+	public function create(Route $route, $parameters = [], string $queryString = ''): HalApiLink;
 
 }

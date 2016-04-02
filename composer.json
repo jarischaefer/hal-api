@@ -2,7 +2,7 @@
 	"name": "jarischaefer/hal-api",
 	"description": "Enhances your HATEOAS experience by automating common tasks.",
 	"type": "library",
-	"keywords": ["HAL", "HATEOAS", "API", "REST", "Laravel"],
+	"keywords": ["HAL", "HATEOAS", "API", "REST", "Laravel", "CRUD", "PHP7"],
 	"license": "MIT",
 	"authors": [
 		{
@@ -12,13 +12,13 @@
 		}
 	],
 	"require": {
-		"php": ">=5.6.0"
+		"php": ">=7.0.0"
 	},
 	"require-dev": {
 		"laravel/framework": "5.2.*",
 		"fzaninotto/faker": "~1.4",
-		"mockery/mockery": "0.9.*",
-		"phpunit/phpunit": "~4.0",
+		"mockery/mockery": "dev-master",
+		"phpunit/phpunit": "~5.0",
 		"phpspec/phpspec": "~2.1"
 	},
 	"autoload": {

@@ -15,13 +15,20 @@ interface HalApiControllerContract
 	 * @param CacheFactory $cacheFactory
 	 * @return HalApiCache
 	 */
-	public static function getCache(CacheFactory $cacheFactory);
+	public static function getCache(CacheFactory $cacheFactory): HalApiCache;
 
 	/**
 	 * @param CacheFactory $cacheFactory
 	 * @return HalApiCache[]
 	 */
-	public static function getRelatedCaches(CacheFactory $cacheFactory);
+	public static function getRelatedCaches(CacheFactory $cacheFactory): array;
+
+	/**
+	 * Returns the controller's relation.
+	 *
+	 * @return string
+	 */
+	public static function getRelationName(): string;
 
 	/**
 	 * Returns a controller's relation. The relation is a way of interacting with resources using
@@ -37,7 +44,7 @@ interface HalApiControllerContract
 	 * @param string $action
 	 * @return string
 	 */
-	public static function getRelation($action = null);
+	public static function getRelation(string $action = null): string;
 
 	/**
 	 * Returns the action name (e.g. App\Http\Controllers\MyController@doSomething).
@@ -45,7 +52,7 @@ interface HalApiControllerContract
 	 * @param string $methodName
 	 * @return string
 	 */
-	public static function actionName($methodName);
+	public static function actionName(string $methodName): string;
 
 	/**
 	 * Generates a URL for the given method name and parameters.
@@ -59,9 +66,9 @@ interface HalApiControllerContract
 	 *
 	 * @param HalApiUrlGenerator $urlGenerator
 	 * @param string $methodName
-	 * @param array $parameters
+	 * @param array|mixed $parameters
 	 * @return string
 	 */
-	public static function action(HalApiUrlGenerator $urlGenerator, $methodName, $parameters = []);
+	public static function action(HalApiUrlGenerator $urlGenerator, string $methodName, $parameters = []): string;
 
 }

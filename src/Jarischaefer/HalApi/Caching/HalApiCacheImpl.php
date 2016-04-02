@@ -25,20 +25,20 @@ class HalApiCacheImpl implements HalApiCache
 
 	/**
 	 * @param Repository $repository
-	 * @param $cacheKey
-	 * @param $cacheMinutes
+	 * @param string $cacheKey
+	 * @param int $cacheMinutes
 	 */
-	public function __construct(Repository $repository, $cacheKey, $cacheMinutes)
+	public function __construct(Repository $repository, string $cacheKey, int $cacheMinutes)
 	{
 		$this->repository = $repository;
-		$this->cacheKey = (string)$cacheKey;
-		$this->cacheMinutes = (int)$cacheMinutes;
+		$this->cacheKey = $cacheKey;
+		$this->cacheMinutes = $cacheMinutes;
 	}
 
 	/**
 	 * @return Repository
 	 */
-	public function getRepository()
+	public function getRepository(): Repository
 	{
 		return $this->repository;
 	}
@@ -46,7 +46,7 @@ class HalApiCacheImpl implements HalApiCache
 	/**
 	 * @return string
 	 */
-	public function getCacheKey()
+	public function getCacheKey(): string
 	{
 		return $this->cacheKey;
 	}
@@ -54,7 +54,7 @@ class HalApiCacheImpl implements HalApiCache
 	/**
 	 * @return int
 	 */
-	public function getCacheMinutes()
+	public function getCacheMinutes(): int
 	{
 		return $this->cacheMinutes;
 	}
@@ -62,7 +62,7 @@ class HalApiCacheImpl implements HalApiCache
 	/**
 	 * @inheritdoc
 	 */
-	public function all()
+	public function all(): array
 	{
 		return $this->repository->get($this->cacheKey, []);
 	}
@@ -70,7 +70,7 @@ class HalApiCacheImpl implements HalApiCache
 	/**
 	 * @inheritdoc
 	 */
-	public function has($key)
+	public function has(string $key): bool
 	{
 		return array_key_exists($key, $this->all());
 	}
@@ -78,7 +78,7 @@ class HalApiCacheImpl implements HalApiCache
 	/**
 	 * @inheritdoc
 	 */
-	public function fetch($key)
+	public function fetch(string $key)
 	{
 		$cache = $this->all();
 
@@ -88,7 +88,7 @@ class HalApiCacheImpl implements HalApiCache
 	/**
 	 * @inheritdoc
 	 */
-	public function put($key, $value)
+	public function put(string $key, $value): HalApiCache
 	{
 		$cache = $this->all();
 		$cache[$key] = $value;
@@ -100,17 +100,7 @@ class HalApiCacheImpl implements HalApiCache
 	/**
 	 * @inheritdoc
 	 */
-	public function replace($value)
-	{
-		$this->repository->put($this->cacheKey, $value, $this->cacheMinutes);
-
-		return $this;
-	}
-
-	/**
-	 * @inheritdoc
-	 */
-	public function evict($key)
+	public function evict(string $key): HalApiCache
 	{
 		$cache = $this->all();
 
@@ -125,15 +115,25 @@ class HalApiCacheImpl implements HalApiCache
 	/**
 	 * @inheritdoc
 	 */
-	public function purge()
+	public function purge(): HalApiCache
 	{
-		$this->replace([]);
+		return $this->replace([]);
 	}
 
 	/**
 	 * @inheritdoc
 	 */
-	public function persist($key, Closure $closure)
+	private function replace($value): HalApiCache
+	{
+		$this->repository->put($this->cacheKey, $value, $this->cacheMinutes);
+
+		return $this;
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function persist(string $key, Closure $closure)
 	{
 		$cached = $this->fetch($key);
 
@@ -148,7 +148,7 @@ class HalApiCacheImpl implements HalApiCache
 	/**
 	 * @inheritdoc
 	 */
-	public function key(...$fragments)
+	public function key(string ...$fragments): string
 	{
 		return join('_', $fragments);
 	}

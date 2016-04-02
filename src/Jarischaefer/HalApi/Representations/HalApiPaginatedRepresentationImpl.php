@@ -15,7 +15,6 @@ class HalApiPaginatedRepresentationImpl extends HalApiRepresentationImpl impleme
 {
 
 	/**
-	 *
 	 * @param LinkFactory $linkFactory
 	 * @param RouteHelper $routeHelper
 	 * @param HalApiLink $self
@@ -24,18 +23,16 @@ class HalApiPaginatedRepresentationImpl extends HalApiRepresentationImpl impleme
 	 * @param HalApiTransformerContract $transformer
 	 * @param string $relation
 	 */
-	public function __construct(LinkFactory $linkFactory, RouteHelper $routeHelper, HalApiLink $self, HalApiLink $parent, Paginator $paginator, HalApiTransformerContract $transformer, $relation)
+	public function __construct(LinkFactory $linkFactory, RouteHelper $routeHelper, HalApiLink $self, HalApiLink $parent, Paginator $paginator, HalApiTransformerContract $transformer, string $relation)
 	{
 		parent::__construct($linkFactory, $routeHelper, $self, $parent);
 
 		$route = $self->getRoute();
 		$routeParameters = array_merge($self->getParameters(), ['per_page' => $paginator->perPage()]);
-		$meta = self::createPaginationMeta($paginator);
-		$items = $paginator->items();
 
 		$this->embedFromArray([
-			$relation => $transformer->collection($items)
-		])->meta('pagination', $meta)
+			$relation => $transformer->collection($paginator->items())
+		])->meta('pagination', self::createPaginationMeta($paginator))
 			->link('first', $linkFactory->create($route, array_merge($routeParameters, ['page' => 1])));
 
 		$currentPage = $paginator->currentPage();
@@ -59,7 +56,7 @@ class HalApiPaginatedRepresentationImpl extends HalApiRepresentationImpl impleme
 	 * @param Paginator $paginator
 	 * @return array
 	 */
-	private static function createPaginationMeta(Paginator $paginator)
+	private static function createPaginationMeta(Paginator $paginator): array
 	{
 		$meta = [
 			'page' => $paginator->currentPage(),

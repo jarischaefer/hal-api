@@ -1,5 +1,7 @@
 <?php namespace Jarischaefer\HalApi\Routing;
 
+use Illuminate\Http\Request;
+use Illuminate\Routing\Router;
 use Illuminate\Routing\UrlGenerator;
 
 /**
@@ -9,6 +11,18 @@ use Illuminate\Routing\UrlGenerator;
 class HalApiUrlGenerator extends UrlGenerator
 {
 
+	/**
+	 * @param Router $router
+	 * @param Request $request
+	 */
+	public function __construct(Router $router, Request $request)
+	{
+		parent::__construct($router->getRoutes(), $request);
+	}
+
+	/**
+	 * @inheritdoc
+	 */
 	protected function toRoute($route, $parameters, $absolute)
 	{
 		$parameters = $this->formatParameters($parameters);

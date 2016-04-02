@@ -10,17 +10,16 @@ use Jarischaefer\HalApi\Tests\TestCase;
 class ResourceRouteTest extends TestCase
 {
 
-	private function assertRoute(RouteCollection $routes, $uri, $httpMethod, $actionName)
+	private function assertRoute(RouteCollection $routes, string $uri, string $httpMethod, string $actionName)
 	{
 		/** @var Route $route */
 		foreach ($routes as $route) {
-			if ($route->getUri() == $uri && in_array($httpMethod, $route->getMethods()) && $route->getActionName() == $actionName) {
-				return true;
+			if (strcmp($route->getUri(), $uri) === 0 && strcmp($route->getActionName(), $actionName) === 0 && in_array($httpMethod, $route->getMethods())) {
+				return;
 			}
 		}
 
 		$this->fail('Could not find route with uri [' . $uri . '], method [' . $httpMethod . '] and action name [' . $actionName . ']');
-		return false;
 	}
 
 	public function testResourceRoute()

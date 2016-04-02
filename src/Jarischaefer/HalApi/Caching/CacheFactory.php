@@ -12,6 +12,6 @@ interface CacheFactory
 	 * @param int $cacheMinutes
 	 * @return HalApiCache
 	 */
-	public function create($cacheKey, $cacheMinutes);
+	public function create(string $cacheKey, int $cacheMinutes): HalApiCache;
 
 }

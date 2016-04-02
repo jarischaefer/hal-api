@@ -31,7 +31,7 @@ class SafeIndexArray implements ArrayAccess
 	/**
 	 * @return array
 	 */
-	public function getArray()
+	public function getArray(): array
 	{
 		return $this->array;
 	}
@@ -42,6 +42,14 @@ class SafeIndexArray implements ArrayAccess
 	public function getDefault()
 	{
 		return $this->default;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function keys(): array
+	{
+		return array_keys($this->array);
 	}
 
 	/**

@@ -47,10 +47,10 @@ class ResourceRoute implements RouteHelperConstants
 	 * @param array $methods
 	 * @param bool $pagination
 	 */
-	public function __construct($name, $controller, RouteHelper $routeHelper, $methods = [self::INDEX, self::SHOW, self::STORE, self::UPDATE, self::DESTROY], $pagination = true)
+	public function __construct(string $name, string $controller, RouteHelper $routeHelper, array $methods = [self::INDEX, self::SHOW, self::STORE, self::UPDATE, self::DESTROY], bool $pagination = true)
 	{
-		$this->name = (string)$name;
-		$this->controller = (string)$controller;
+		$this->name = $name;
+		$this->controller = $controller;
 		$this->routeHelper = $routeHelper;
 		$this->pagination = $pagination;
 		$this->methods = is_array($methods) ? $methods : [$methods];
@@ -64,11 +64,11 @@ class ResourceRoute implements RouteHelperConstants
 	 * 	Base URI: /users/{users} where {users} is the identifier (e.g. user ID) for a specific user
 	 *  GET call to get a user's posts: /users/{users}/posts
 	 *
-	 * @param $uri
-	 * @param $method
-	 * @return $this
+	 * @param string $uri
+	 * @param string $method
+	 * @return ResourceRoute
 	 */
-	public function get($uri, $method)
+	public function get(string $uri, string $method): ResourceRoute
 	{
 		$this->routeHelper->get($this->name . '/{' . $this->name . '}/' . $uri, $this->controller, $method);
 
@@ -80,9 +80,9 @@ class ResourceRoute implements RouteHelperConstants
 	 *
 	 * @param $uri
 	 * @param $method
-	 * @return $this
+	 * @return ResourceRoute
 	 */
-	public function post($uri, $method)
+	public function post(string $uri, string $method): ResourceRoute
 	{
 		$this->routeHelper->post($this->name . '/{' . $this->name . '}/' . $uri, $this->controller, $method);
 
@@ -94,9 +94,9 @@ class ResourceRoute implements RouteHelperConstants
 	 *
 	 * @param $uri
 	 * @param $method
-	 * @return $this
+	 * @return ResourceRoute
 	 */
-	public function put($uri, $method)
+	public function put(string $uri, string $method): ResourceRoute
 	{
 		$this->routeHelper->put($this->name . '/{' . $this->name . '}/' . $uri, $this->controller, $method);
 
@@ -108,9 +108,9 @@ class ResourceRoute implements RouteHelperConstants
 	 *
 	 * @param $uri
 	 * @param $method
-	 * @return $this
+	 * @return ResourceRoute
 	 */
-	public function patch($uri, $method)
+	public function patch(string $uri, string $method): ResourceRoute
 	{
 		$this->routeHelper->patch($this->name . '/{' . $this->name . '}/' . $uri, $this->controller, $method);
 
@@ -122,9 +122,9 @@ class ResourceRoute implements RouteHelperConstants
 	 *
 	 * @param $uri
 	 * @param $method
-	 * @return $this
+	 * @return ResourceRoute
 	 */
-	public function delete($uri, $method)
+	public function delete(string $uri, string $method): ResourceRoute
 	{
 		$this->routeHelper->delete($this->name . '/{' . $this->name . '}/' . $uri, $this->controller, $method);
 
@@ -141,9 +141,9 @@ class ResourceRoute implements RouteHelperConstants
 	 *
 	 * @param $uri
 	 * @param $method
-	 * @return $this
+	 * @return ResourceRoute
 	 */
-	public function rawGet($uri, $method)
+	public function rawGet(string $uri, string $method): ResourceRoute
 	{
 		$this->routeHelper->get($this->name . '/' . $uri, $this->controller, $method);
 
@@ -155,9 +155,9 @@ class ResourceRoute implements RouteHelperConstants
 	 *
 	 * @param $uri
 	 * @param $method
-	 * @return $this
+	 * @return ResourceRoute
 	 */
-	public function rawPost($uri, $method)
+	public function rawPost(string $uri, string $method): ResourceRoute
 	{
 		$this->routeHelper->post($this->name . '/' . $uri, $this->controller, $method);
 
@@ -169,9 +169,9 @@ class ResourceRoute implements RouteHelperConstants
 	 *
 	 * @param $uri
 	 * @param $method
-	 * @return $this
+	 * @return ResourceRoute
 	 */
-	public function rawPut($uri, $method)
+	public function rawPut(string $uri, string $method): ResourceRoute
 	{
 		$this->routeHelper->put($this->name . '/' . $uri, $this->controller, $method);
 
@@ -183,9 +183,9 @@ class ResourceRoute implements RouteHelperConstants
 	 *
 	 * @param $uri
 	 * @param $method
-	 * @return $this
+	 * @return ResourceRoute
 	 */
-	public function rawPatch($uri, $method)
+	public function rawPatch(string $uri, string $method): ResourceRoute
 	{
 		$this->routeHelper->patch($this->name . '/' . $uri, $this->controller, $method);
 
@@ -197,9 +197,9 @@ class ResourceRoute implements RouteHelperConstants
 	 *
 	 * @param $uri
 	 * @param $method
-	 * @return $this
+	 * @return ResourceRoute
 	 */
-	public function rawDelete($uri, $method)
+	public function rawDelete(string $uri, string $method): ResourceRoute
 	{
 		$this->routeHelper->delete($this->name . '/' . $uri, $this->controller, $method);
 
@@ -212,7 +212,7 @@ class ResourceRoute implements RouteHelperConstants
 	 *
 	 * @return RouteHelper
 	 */
-	public function done()
+	public function done(): RouteHelper
 	{
 		if (in_array(self::INDEX, $this->methods)) {
 			$this->routeHelper->get($this->name, $this->controller, self::INDEX);

@@ -1,20 +1,12 @@
 <?php namespace Jarischaefer\HalApi\Providers;
 
-use Illuminate\Database\DatabaseManager;
-use Illuminate\Database\Schema\Builder;
-use Illuminate\Foundation\Application;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Jarischaefer\HalApi\Caching\CacheFactory;
 use Jarischaefer\HalApi\Caching\CacheFactoryImpl;
-use Jarischaefer\HalApi\Caching\HalApiCache;
-use Jarischaefer\HalApi\Caching\HalApiCacheImpl;
 use Jarischaefer\HalApi\Middleware\HalApiCacheMiddleware;
 use Jarischaefer\HalApi\Middleware\HalApiETagMiddleware;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
-use Jarischaefer\HalApi\Representations\HalApiRepresentation;
-use Jarischaefer\HalApi\Representations\HalApiRepresentationImpl;
 use Jarischaefer\HalApi\Representations\RepresentationFactory;
 use Jarischaefer\HalApi\Representations\RepresentationFactoryImpl;
 use Jarischaefer\HalApi\Routing\HalApiUrlGenerator;
@@ -42,7 +34,8 @@ class HalApiServiceProvider extends ServiceProvider
 		self::BASE_PATH . 'Caching' . DIRECTORY_SEPARATOR . 'HalApiCacheImpl.php',
 
 		self::BASE_PATH . 'Controllers' . DIRECTORY_SEPARATOR . 'HalApiController.php',
-		self::BASE_PATH . 'Controllers' . DIRECTORY_SEPARATOR . 'HalApiControllerContract.php',
+		self::BASE_PATH . 'Controllers' . DIRECTORY_SEPARATOR . 'HalApiControllerParameters.php',
+		self::BASE_PATH . 'Controllers' . DIRECTORY_SEPARATOR . 'HalApiRequestParameters.php',
 		self::BASE_PATH . 'Controllers' . DIRECTORY_SEPARATOR . 'HalApiResourceController.php',
 
 		self::BASE_PATH . 'Helpers' . DIRECTORY_SEPARATOR . 'ResourceRoute.php',
@@ -91,9 +84,10 @@ class HalApiServiceProvider extends ServiceProvider
 	{
 		$router->middleware(HalApiETagMiddleware::NAME, HalApiETagMiddleware::class);
 		$router->middleware(HalApiCacheMiddleware::NAME, HalApiCacheMiddleware::class);
-		$this->app->singleton(RouteHelper::class, function() use ($router) {
-			return new RouteHelper($router);
-		});
+
+		$this->app->singleton(RouteHelper::class);
+		$this->app->singleton(HalApiUrlGenerator::class);
+		$this->app->singleton(LinkFactory::class, LinkFactoryImpl::class);
 	}
 
 	/**
@@ -103,26 +97,8 @@ class HalApiServiceProvider extends ServiceProvider
 	 */
 	public function register()
 	{
-		$this->app->bind(HalApiRepresentation::class, HalApiRepresentationImpl::class);
-		$this->app->bind(HalApiCache::class, HalApiCacheImpl::class);
-
-		$this->app->singleton(Builder::class, function (Application $application) {
-			/** @var DatabaseManager $databaseManager */
-			$databaseManager = $application->make(DatabaseManager::class);
-
-			return $databaseManager->connection()->getSchemaBuilder();
-		});
 		$this->app->singleton(CacheFactory::class, CacheFactoryImpl::class);
 		$this->app->singleton(RepresentationFactory::class, RepresentationFactoryImpl::class);
-		$this->app->singleton(LinkFactory::class, function(Application $application) {
-			return new LinkFactoryImpl($application->make(HalApiUrlGenerator::class));
-		});
-		$this->app->singleton(HalApiUrlGenerator::class, function(Application $application) {
-			/** @var Router $router */
-			$router = $application->make(Router::class);
-			$request = $application->make(Request::class);
-			return new HalApiUrlGenerator($router->getRoutes(), $request);
-		});
 	}
 
 	/**

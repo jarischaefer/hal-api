@@ -2,7 +2,9 @@
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Routing\Route;
+use Jarischaefer\HalApi\Helpers\Checks;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
+use Jarischaefer\HalApi\Representations\HalApiRepresentation;
 use Jarischaefer\HalApi\Representations\RepresentationFactory;
 use Jarischaefer\HalApi\Routing\HalApiLink;
 use Jarischaefer\HalApi\Routing\LinkFactory;
@@ -54,7 +56,7 @@ abstract class HalApiTransformer implements HalApiTransformerContract
 	/**
 	 * @inheritdoc
 	 */
-	public final function item(Model $model)
+	public function item(Model $model): HalApiRepresentation
 	{
 		$self = $this->getSelf($model);
 		$parent = $this->getParent($model);
@@ -71,8 +73,10 @@ abstract class HalApiTransformer implements HalApiTransformerContract
 	/**
 	 * @inheritdoc
 	 */
-	public function collection(array $collection)
+	public function collection(array $collection): array
 	{
+		Checks::arrayType($collection, Model::class);
+
 		$elements = [];
 
 		foreach ($collection as $model) {
@@ -86,7 +90,7 @@ abstract class HalApiTransformer implements HalApiTransformerContract
 	 * @param Model $model
 	 * @return HalApiLink
 	 */
-	protected function getSelf(Model $model)
+	protected function getSelf(Model $model): HalApiLink
 	{
 		return $this->linkFactory->create($this->self, $model->getKey());
 	}
@@ -95,7 +99,7 @@ abstract class HalApiTransformer implements HalApiTransformerContract
 	 * @param Model $model
 	 * @return HalApiLink
 	 */
-	protected function getParent(Model $model)
+	protected function getParent(Model $model): HalApiLink
 	{
 		return $this->linkFactory->create($this->parent);
 	}
@@ -104,7 +108,7 @@ abstract class HalApiTransformer implements HalApiTransformerContract
 	 * @param Model $model
 	 * @return HalApiLink[]
 	 */
-	protected function getLinks(Model $model)
+	protected function getLinks(Model $model): array
 	{
 		return [];
 	}
@@ -113,7 +117,7 @@ abstract class HalApiTransformer implements HalApiTransformerContract
 	 * @param Model $model
 	 * @return array
 	 */
-	protected function getEmbedded(Model $model)
+	protected function getEmbedded(Model $model): array
 	{
 		return [];
 	}

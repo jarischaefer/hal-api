@@ -16,7 +16,7 @@ interface HalApiTransformerContract
 	 * @param Model $model
 	 * @return HalApiRepresentation
 	 */
-	public function item(Model $model);
+	public function item(Model $model): HalApiRepresentation;
 
 	/**
 	 * Transforms multiple models into Hal responses. This includes the model's data and all its relations and embedded data.
@@ -24,7 +24,7 @@ interface HalApiTransformerContract
 	 * @param array $collection
 	 * @return HalApiRepresentation[]
 	 */
-	public function collection(array $collection);
+	public function collection(array $collection): array;
 
 	/**
 	 * Performs a raw transformation returning a key-value array of the model's attributes.
@@ -33,6 +33,6 @@ interface HalApiTransformerContract
 	 * @param Model $model
 	 * @return array
 	 */
-	public function transform(Model $model);
+	public function transform(Model $model): array;
 
 }

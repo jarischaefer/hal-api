@@ -25,7 +25,7 @@ class CacheFactoryImpl implements CacheFactory
 	/**
 	 * @inheritdoc
 	 */
-	public function create($cacheKey, $cacheMinutes)
+	public function create(string $cacheKey, int $cacheMinutes): HalApiCache
 	{
 		return new HalApiCacheImpl($this->repository, $cacheKey, $cacheMinutes);
 	}

@@ -4,9 +4,11 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
+use InvalidArgumentException;
 use Jarischaefer\HalApi\Controllers\HalApiControllerContract;
 use ReflectionClass;
 use RuntimeException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Provides an easier, more RESTful approach of registering routes.
@@ -52,9 +54,9 @@ class RouteHelper implements RouteHelperConstants
 
 	/**
 	 * @param Router $router
-	 * @return static
+	 * @return RouteHelper
 	 */
-	public static function make(Router $router)
+	public static function make(Router $router): RouteHelper
 	{
 		return new static($router);
 	}
@@ -62,7 +64,7 @@ class RouteHelper implements RouteHelperConstants
 	/**
 	 * @return Router
 	 */
-	public function getRouter()
+	public function getRouter(): Router
 	{
 		return $this->router;
 	}
@@ -76,7 +78,7 @@ class RouteHelper implements RouteHelperConstants
 	 * @param bool $pagination
 	 * @return ResourceRoute
 	 */
-	public function resource($name, $controller, $methods = [self::INDEX, self::SHOW, self::STORE, self::UPDATE, self::DESTROY], $pagination = true)
+	public function resource(string $name, string $controller, array $methods = [self::INDEX, self::SHOW, self::STORE, self::UPDATE, self::DESTROY], bool $pagination = true): ResourceRoute
 	{
 		return new ResourceRoute($name, $controller, $this, $methods, $pagination);
 	}
@@ -87,11 +89,11 @@ class RouteHelper implements RouteHelperConstants
 	 * @param string $uri The URI (e.g. / or /users or /users/{param}/friends).
 	 * @param string $controller The path to the controller handling the resource (e.g. UsersController::class or App\Http\Controllers\UsersController).
 	 * @param string $method Name of the method inside the controller that will handle the request.
-	 * @return $this
+	 * @return RouteHelper
 	 */
-	public function get($uri, $controller, $method)
+	public function get(string $uri, string $controller, string $method): RouteHelper
 	{
-		$this->router->get($uri, $controller . '@' . $method);
+		$this->router->get($uri, $controller . static::ACTION_NAME_DELIMITER . $method);
 
 		return $this;
 	}
@@ -102,11 +104,11 @@ class RouteHelper implements RouteHelperConstants
 	 * @param string $uri The URI (e.g. / or /users or /users/{param}/friends).
 	 * @param string $controller The path to the controller handling the resource (e.g. UsersController::class or App\Http\Controllers\UsersController).
 	 * @param string $method Name of the method inside the controller that will handle the request.
-	 * @return $this
+	 * @return RouteHelper
 	 */
-	public function post($uri, $controller, $method)
+	public function post(string $uri, string $controller, string $method): RouteHelper
 	{
-		$this->router->post($uri, $controller . '@' . $method);
+		$this->router->post($uri, $controller . static::ACTION_NAME_DELIMITER . $method);
 
 		return $this;
 	}
@@ -117,11 +119,11 @@ class RouteHelper implements RouteHelperConstants
 	 * @param string $uri The URI (e.g. / or /users or /users/{param}/friends).
 	 * @param string $controller The path to the controller handling the resource (e.g. UsersController::class or App\Http\Controllers\UsersController).
 	 * @param string $method Name of the method inside the controller that will handle the request.
-	 * @return $this
+	 * @return RouteHelper
 	 */
-	public function put($uri, $controller, $method)
+	public function put(string $uri, string $controller, string $method): RouteHelper
 	{
-		$this->router->put($uri, $controller . '@' . $method);
+		$this->router->put($uri, $controller . static::ACTION_NAME_DELIMITER . $method);
 
 		return $this;
 	}
@@ -132,11 +134,11 @@ class RouteHelper implements RouteHelperConstants
 	 * @param string $uri The URI (e.g. / or /users or /users/{param}/friends).
 	 * @param string $controller The path to the controller handling the resource (e.g. UsersController::class or App\Http\Controllers\UsersController).
 	 * @param string $method Name of the method inside the controller that will handle the request.
-	 * @return $this
+	 * @return RouteHelper
 	 */
-	public function patch($uri, $controller, $method)
+	public function patch(string $uri, string $controller, string $method): RouteHelper
 	{
-		$this->router->patch($uri, $controller . '@' . $method);
+		$this->router->patch($uri, $controller . static::ACTION_NAME_DELIMITER . $method);
 
 		return $this;
 	}
@@ -147,11 +149,11 @@ class RouteHelper implements RouteHelperConstants
 	 * @param string $uri The URI (e.g. / or /users or /users/{param}/friends).
 	 * @param string $controller The path to the controller handling the resource (e.g. UsersController::class or App\Http\Controllers\UsersController).
 	 * @param string $method Name of the method inside the controller that will handle the request.
-	 * @return $this
+	 * @return RouteHelper
 	 */
-	public function delete($uri, $controller, $method)
+	public function delete(string $uri, string $controller, string $method): RouteHelper
 	{
-		$this->router->delete($uri, $controller . '@' . $method);
+		$this->router->delete($uri, $controller . static::ACTION_NAME_DELIMITER . $method);
 
 		return $this;
 	}
@@ -163,12 +165,12 @@ class RouteHelper implements RouteHelperConstants
 	 * @param string $uri The URI (e.g. / or /users or /users/{param}/friends).
 	 * @param string $controller The path to the controller handling the resource (e.g. UsersController::class or App\Http\Controllers\UsersController).
 	 * @param string $method Name of the method inside the controller that will handle the request.
-	 * @return $this
+	 * @return RouteHelper
 	 */
-	public function pagination($uri, $controller, $method)
+	public function pagination(string $uri, string $controller, string $method): RouteHelper
 	{
 		$paginatedUri = $uri . (stripos($uri, '?') ? '&' : '?') . self::PAGINATION_URI;
-		$this->router->get($paginatedUri, $controller . '@' . $method);
+		$this->router->get($paginatedUri, $controller . static::ACTION_NAME_DELIMITER . $method);
 
 		return $this;
 	}
@@ -179,7 +181,7 @@ class RouteHelper implements RouteHelperConstants
 	 * @param string $actionName The action name (e.g. App\Http\Controllers\UsersController@delete).
 	 * @return Route
 	 */
-	public function byAction($actionName)
+	public function byAction(string $actionName): Route
 	{
 		if (array_key_exists($actionName, $this->byActionRouteCache)) {
 			return $this->byActionRouteCache[$actionName];
@@ -202,16 +204,18 @@ class RouteHelper implements RouteHelperConstants
 	 * @param Route $child
 	 * @return Route
 	 */
-	public function parent(Route $child)
+	public function parent(Route $child): Route
 	{
 		// TODO reflection mess
 
-		if (array_key_exists($child->getUri(), $this->parentRouteCache)) {
-			return $this->parentRouteCache[$child->getUri()];
+		$childUri = $child->getUri();
+
+		if (array_key_exists($childUri, $this->parentRouteCache)) {
+			return $this->parentRouteCache[$childUri];
 		}
 
-		$lastSlash = strripos($child->getUri(), '/');
-		$guessedParentUri = $lastSlash !== FALSE ? substr($child->getUri(), 0, $lastSlash) : '/';
+		$lastSlash = strripos($childUri, '/');
+		$guessedParentUri = $lastSlash === FALSE ? '/' : substr($childUri, 0, $lastSlash);
 		$request = new Request;
 		$reflectionClass = new ReflectionClass($request);
 		$pathInfo = $reflectionClass->getProperty('pathInfo');
@@ -227,7 +231,7 @@ class RouteHelper implements RouteHelperConstants
 				$route = $this->router->getRoutes()->match($request);
 
 				if ($route instanceof Route) {
-					return $this->parentRouteCache[$child->getUri()] = $route;
+					return $this->parentRouteCache[$childUri] = $route;
 				}
 			} catch (Exception $e) {
                 if ($guessedParentUri == '/') {
@@ -243,7 +247,7 @@ class RouteHelper implements RouteHelperConstants
             }
 		}
 
-		return $this->parentRouteCache[$child->getUri()] = $child; // return the same route if no parent exists
+		return $this->parentRouteCache[$childUri] = $child; // return the same route if no parent exists
 	}
 
 	/**
@@ -253,35 +257,37 @@ class RouteHelper implements RouteHelperConstants
 	 * @param Route $parentRoute
 	 * @return Route[]
 	 */
-	public function subordinates(Route $parentRoute)
+	public function subordinates(Route $parentRoute): array
 	{
-		if (array_key_exists($parentRoute->getUri(), $this->subordinateRouteCache)) {
-			return $this->subordinateRouteCache[$parentRoute->getUri()];
+		$parentUri = $parentRoute->getUri();
+
+		if (array_key_exists($parentUri, $this->subordinateRouteCache)) {
+			return $this->subordinateRouteCache[$parentUri];
 		}
 
-		$routes = $this->router->getRoutes();
+		$parentActionName = $parentRoute->getActionName();
 		$children = [];
 
 		/** @var Route $route */
-		foreach ($routes as $route) {
-			if (!self::isValid($route)) {
+		foreach ($this->router->getRoutes() as $route) {
+			$actionName = $route->getActionName();
+
+			if (!self::isValidActionName($actionName)) {
 				continue;
 			}
 
 			// if the route does not start with the same uri as the current route -> skip
-			if ($parentRoute->getUri() != '/' && !starts_with($route->getUri(), $parentRoute->getUri())) {
+			if ($parentUri !== '/' && !starts_with($route->getUri(), $parentUri)) {
 				continue;
 			}
 
 			// if route equals the parent route
-			if ($parentRoute->getActionName() == $route->getActionName()) {
-				continue;
+			if (strcmp($parentActionName, $actionName) !== 0) {
+				$children[] = $route;
 			}
-
-			$children[] = $route;
 		}
 
-		return $this->subordinateRouteCache[$parentRoute->getUri()] = $children;
+		return $this->subordinateRouteCache[$parentUri] = $children;
 	}
 
 	/**
@@ -290,23 +296,66 @@ class RouteHelper implements RouteHelperConstants
 	 * @param Route $route
 	 * @return bool
 	 */
-	public static function isValid(Route $route)
+	public static function isValid(Route $route): bool
+	{
+		return self::isValidActionName($route->getActionName());
+	}
+
+	/**
+	 * @param string $actionName
+	 * @return bool
+	 */
+	public static function isValidActionName(string $actionName): bool
+	{
+		// valid routes are backed by a controller (e.g. App\Http\Controllers\MyController@doSomething)
+		if (!str_contains($actionName, self::ACTION_NAME_DELIMITER)) {
+			return false;
+		}
+
+		$class = explode(self::ACTION_NAME_DELIMITER, $actionName)[0];
+
+		return is_subclass_of($class, HalApiControllerContract::class);
+	}
+
+	/**
+	 * @param Route $route
+	 * @return string
+	 */
+	public static function relation(Route $route): string
 	{
 		$actionName = $route->getActionName();
 
-		// valid routes are backed by a controller (e.g. App\Http\Controllers\MyController@doSomething)
-		if (!str_contains($actionName, '@')) {
-			return false;
+		if (!self::isValidActionName($actionName)) {
+			throw new InvalidArgumentException('Invalid route');
 		}
 
-		$class = explode('@', $actionName)[0];
+		/** @var HalApiControllerContract $class */
+		list($class, $method) = explode(self::ACTION_NAME_DELIMITER, $actionName);
 
-		// only add a link if this class is its controller's parent
-		if (!is_subclass_of($class, HalApiControllerContract::class)) {
-			return false;
-		}
+		return $class::getRelation($method);
+	}
 
-		return true;
+	/**
+	 * @inheritdoc
+	 */
+	public static function getModelBindingCallback(): callable
+	{
+		return function ($value) {
+			switch (\Request::getMethod()) {
+				case Request::METHOD_GET:
+					throw new NotFoundHttpException;
+				case Request::METHOD_POST:
+					throw new NotFoundHttpException;
+				case Request::METHOD_PUT:
+					return $value;
+				case Request::METHOD_PATCH:
+					throw new NotFoundHttpException;
+				case Request::METHOD_DELETE:
+					throw new NotFoundHttpException;
+				default:
+					return null;
+			}
+		};
 	}
 
 }

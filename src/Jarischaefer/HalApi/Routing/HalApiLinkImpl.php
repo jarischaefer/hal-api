@@ -1,6 +1,5 @@
 <?php namespace Jarischaefer\HalApi\Routing;
 
-use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Routing\Route;
 
 /**
@@ -42,7 +41,7 @@ class HalApiLinkImpl implements HalApiLink
 		$this->route = $route;
 		$this->parameters = is_array($parameters) ? $parameters : [$parameters];
 		$this->queryString = self::createQueryString($queryString);
-		$this->templated = self::evaluateTemplated($route, $urlGenerator, $queryString);
+		$this->templated = self::evaluateTemplated($route, $urlGenerator, $this->queryString);
 		$this->link = $urlGenerator->action($this->route->getActionName(), $this->templated ? $this->parameters : []);
 
 		if (!empty($this->queryString)) {
@@ -114,11 +113,11 @@ class HalApiLinkImpl implements HalApiLink
 
 	/**
 	 * @param Route $route
-	 * @param UrlGenerator $urlGenerator
+	 * @param HalApiUrlGenerator $urlGenerator
 	 * @param string $queryString
 	 * @return bool
 	 */
-	private static function evaluateTemplated(Route $route, UrlGenerator $urlGenerator, string $queryString): bool
+	private static function evaluateTemplated(Route $route, HalApiUrlGenerator $urlGenerator, string $queryString): bool
 	{
 		// Does the route have named parameters? http://example.com/users/{users}
 		if (count($route->parameterNames())) {

@@ -136,10 +136,6 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	 */
 	public function link(string $relation, HalApiLink $link): HalApiRepresentation
 	{
-		if (!is_string($relation)) {
-			throw new InvalidArgumentException('relation must be a string, got: ' . gettype($relation));
-		}
-
 		$this->links[$relation] = $link;
 
 		return $this;
@@ -223,7 +219,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 		$build = $this->root;
 
 		if ($this->autoSubordinateRoutes) {
-			if (!array_key_exists(self::SELF, $this->links)) {
+			if (!isset($this->links[self::SELF])) {
 				throw new RuntimeException('relation for self is not defined, cannot add subordinate routes');
 			}
 

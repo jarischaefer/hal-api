@@ -40,10 +40,6 @@ abstract class HalApiEloquentSearchRepository extends HalApiEloquentRepository i
 	 */
 	public function searchMulti(array $searchAttributes, int $page, int $perPage): LengthAwarePaginator
 	{
-		if (empty($searchAttributes)) {
-			throw new InvalidArgumentException('searchAttributes must not be empty');
-		}
-
 		$query = $this->model->newQuery();
 
 		foreach ($searchAttributes as $field => $term) {

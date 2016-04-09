@@ -5,7 +5,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
 use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
+use Jarischaefer\HalApi\Exceptions\NotImplementedException;
 use Jarischaefer\HalApi\Repositories\HalApiRepository;
+use Jarischaefer\HalApi\Repositories\HalApiSearchRepository;
 use Jarischaefer\HalApi\Representations\HalApiPaginatedRepresentation;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
 use Jarischaefer\HalApi\Transformers\HalApiTransformerContract;
@@ -163,6 +165,32 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 		$this->repository->remove($model);
 
 		return $this->responseFactory->make('', Response::HTTP_NO_CONTENT);
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function search(HalApiRequestParameters $parameters): Response
+	{
+		if (!is_subclass_of($this->repository, HalApiSearchRepository::class)) {
+			throw new NotImplementedException('Cannot search unless '
+				. get_class($this->repository) . ' implements ' . HalApiSearchRepository::class);
+		}
+
+		/** @var HalApiSearchRepository $repository */
+		$repository = $this->repository;
+		$searchAttributes = [];
+
+		foreach ($parameters->getParameters()->getArray() as $key => $value) {
+			if ($repository::isFieldSearchable($key)) {
+				$searchAttributes[$key] = $value;
+			}
+		}
+
+		$searchResult = $repository->searchMulti($searchAttributes, $parameters->getPage(), $parameters->getPerPage());
+		$response = $this->paginate($parameters, $searchResult)->build();
+
+		return $this->responseFactory->json($response);
 	}
 
 }

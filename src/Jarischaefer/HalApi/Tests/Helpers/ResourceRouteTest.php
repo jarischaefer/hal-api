@@ -45,7 +45,7 @@ class ResourceRouteTest extends TestCase
 		$routes = $router->getRoutes();
 
 		$this->assertRoute($routes, 'test', 'GET', 'TestController@index');
-		$this->assertRoute($routes, 'test?' . RouteHelper::PAGINATION_URI, 'GET', 'TestController@index');
+		$this->assertRoute($routes, 'test?' . RouteHelper::PAGINATION_QUERY_STRING, 'GET', 'TestController@index');
 		$this->assertRoute($routes, 'test', 'POST', 'TestController@store');
 		$this->assertRoute($routes, 'test/{test}', 'GET', 'TestController@show');
 		$this->assertRoute($routes, 'test/{test}', 'PUT', 'TestController@update');

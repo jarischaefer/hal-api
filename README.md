@@ -163,8 +163,7 @@ class Post extends Model
 ## Repository
 
 You may create an [Eloquent](https://laravel.com/docs/5.2/eloquent)-compatible
-repository by extending **HalApiEloquentRepository** and implementing
-its getModelClass() method.
+repository by extending `HalApiEloquentRepository` and implementing its getModelClass() method.
 
 ```php
 class UserRepository extends HalApiEloquentRepository
@@ -183,6 +182,44 @@ class PostRepository extends HalApiEloquentRepository
 	public static function getModelClass(): string
 	{
 		return Post::class;
+	}
+
+}
+```
+
+### Searchable repository
+
+Implementing HalApiSearchRepository enables searching/filtering by field.
+An [Eloquent](https://laravel.com/docs/5.2/eloquent)-compatible repository is available.
+Not restricting the searchable fields might result in information leakage.
+
+```php
+class UserRepository extends HalApiEloquentSearchRepository
+{
+
+	public static function getModelClass(): string
+	{
+		return User::class;
+	}
+
+	public static function searchableFields(): array
+	{
+		return [User::COLUMN_NAME];
+	}
+
+}
+
+class PostRepository extends HalApiEloquentSearchRepository
+{
+
+	public static function getModelClass(): string
+	{
+		return Post::class;
+	}
+
+	public static function searchableFields(): array
+	{
+		return ['*'];
 	}
 
 }
@@ -359,7 +396,7 @@ class PostTransformer extends HalApiTransformer
 }
 ```
 
-Notice the "users.show" relation in the _emedded field.
+Notice the "users.show" relation in the `_embedded` field.
 
 ```json
 {
@@ -428,7 +465,7 @@ Notice the "users.show" relation in the _emedded field.
 
 ## Dependency wiring
 
-It is recommendend that you wire the transformers' dependencies in a Service Provider:
+It is recommended that you wire the transformers' dependencies in a Service Provider:
 
 ```php
 class MyServiceProvider extends ServiceProvider
@@ -463,6 +500,8 @@ class MyServiceProvider extends ServiceProvider
 
 ## routes.php
 
+The RouteHelper automatically creates routes for all CRUD operations.
+
 ```php
 RouteHelper::make($router)
 	->get('/', HomeController::class, 'index') // Link GET / to the index method in HomeController
@@ -472,6 +511,25 @@ RouteHelper::make($router)
 	->done() // Close the resource block
 
 	->resource('posts', PostsController::class)
+	->done();
+```
+
+### Disabling CRUD operations and pagination
+
+```php
+RouteHelper::make($router)
+	->resource('users', UsersController::class, [RouteHelper::SHOW, RouteHelper::INDEX], false)
+	->done();
+```
+
+### Searching/filtering
+
+The controller's repository must implement HalApiSearchRepository.
+
+```php
+RouteHelper::make($router)
+	->resource('users', UsersController::class)
+		->searchable()
 	->done();
 ```
 
@@ -526,6 +584,8 @@ class Handler extends ExceptionHandler
 			case DatabaseSaveException::class:
 				$this->report($e);
 				return response('', Response::HTTP_UNPROCESSABLE_ENTITY);
+			case FieldNotSearchableException::class:
+			    return response('', Response::HTTP_FORBIDDEN);
 			default:
 				$this->report($e);
 

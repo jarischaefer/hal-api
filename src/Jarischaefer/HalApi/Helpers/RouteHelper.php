@@ -243,7 +243,7 @@ class RouteHelper implements RouteHelperConstants
 	 */
 	public function pagination(string $uri, string $controller, string $method): RouteHelper
 	{
-		$paginatedUri = $uri . (stripos($uri, '?') ? '&' : '?') . self::PAGINATION_URI;
+		$paginatedUri = $uri . (stripos($uri, '?') ? '&' : '?') . self::PAGINATION_QUERY_STRING;
 		$this->router->get($paginatedUri, $controller . static::ACTION_NAME_DELIMITER . $method);
 
 		return $this;

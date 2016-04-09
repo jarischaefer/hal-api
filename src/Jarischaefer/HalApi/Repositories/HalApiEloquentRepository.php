@@ -23,11 +23,10 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 	 * @var Model
 	 */
 	protected $model;
-
 	/**
 	 * @var Builder
 	 */
-	private $schemaBuilder;
+	protected $schemaBuilder;
 
 	/**
 	 * @param DatabaseManager $databaseManager
@@ -114,6 +113,19 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 	 */
 	public function simplePaginate(int $page, int $perPage): Paginator
 	{
+		return $this->withCustomPageResolver($page, function () use ($perPage) {
+			return $this->model->newQuery()->simplePaginate($perPage);
+		});
+	}
+
+	/**
+	 * @param int $page
+	 * @param callable $callback
+	 * @return Paginator
+	 * @throws ReflectionException
+	 */
+	protected static function withCustomPageResolver(int $page, callable $callback): Paginator
+	{
 		// TODO reflection hack
 
 		$originalResolver = self::getOriginalResolver();
@@ -122,7 +134,7 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 		});
 
 		try {
-			return $this->model->newQuery()->simplePaginate($perPage);
+			return $callback();
 		} finally {
 			\Illuminate\Pagination\Paginator::currentPageResolver($originalResolver);
 		}

@@ -31,7 +31,7 @@ class RouteHelperTest extends TestCase
 		$found = false;
 		/** @var Route $route */
 		foreach ($routes as $route) {
-			if (strcmp($route->getUri(), 'test?' . RouteHelper::PAGINATION_URI) === 0) {
+			if (strcmp($route->getUri(), 'test?' . RouteHelper::PAGINATION_QUERY_STRING) === 0) {
 				$found = true;
 				break;
 			}

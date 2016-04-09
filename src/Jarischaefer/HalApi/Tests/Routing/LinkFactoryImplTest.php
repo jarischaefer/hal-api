@@ -13,8 +13,12 @@ class LinkFactoryImplTest extends TestCase
 	{
 		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
+			->once()
+			->with('Jarischaefer\HalApi\Tests\TestController@doSomething', [], false)
+			->andReturn('/params/foo/bar');
+		$urlGenerator->shouldReceive('action')
 			->atLeast($this->once())
-			->withArgs(['Jarischaefer\HalApi\Tests\TestController@doSomething', ['foo', 'bar']])
+			->with('Jarischaefer\HalApi\Tests\TestController@doSomething', ['foo', 'bar'])
 			->andReturn('/params/foo/bar');
 		$route = new Route(['GET'], '/params/{paramonce}/{paramtwo}', ['controller' => 'Jarischaefer\HalApi\Tests\TestController@doSomething']);
 		/** @var HalApiUrlGenerator $urlGenerator */

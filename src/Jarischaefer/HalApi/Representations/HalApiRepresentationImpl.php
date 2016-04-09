@@ -65,6 +65,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	{
 		$this->linkFactory = $linkFactory;
 		$this->routeHelper = $routeHelper;
+
 		$this->link(self::SELF, $self);
 		$this->link(self::PARENT, $parent);
 	}

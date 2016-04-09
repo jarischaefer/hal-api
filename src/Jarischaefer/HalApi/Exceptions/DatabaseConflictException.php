@@ -1,12 +1,12 @@
 <?php namespace Jarischaefer\HalApi\Exceptions;
 
-use Exception;
+use RuntimeException;
 
 /**
  * Class DatabaseConflictException
  * @package Jarischaefer\HalApi\Exceptions
  */
-class DatabaseConflictException extends Exception
+class DatabaseConflictException extends RuntimeException
 {
 
 }

@@ -207,6 +207,18 @@ class ResourceRoute implements RouteHelperConstants
 	}
 
 	/**
+	 * @return ResourceRoute
+	 */
+	public function searchable(): ResourceRoute
+	{
+		$this->routeHelper
+			->get($this->name . '/search', $this->controller, 'search')
+			->get($this->name . '/search?' . self::PAGINATION_QUERY_STRING, $this->controller, 'search');
+
+		return $this;
+	}
+
+	/**
 	 * Call this method once you're done registering additional routes to the current resource.
 	 * The original RouteHelper instance is returned, allowing infinite chaining of ordinary routes and resources.
 	 *

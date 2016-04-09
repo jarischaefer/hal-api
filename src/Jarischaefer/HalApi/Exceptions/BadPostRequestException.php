@@ -1,12 +1,12 @@
 <?php namespace Jarischaefer\HalApi\Exceptions;
 
-use Exception;
+use RuntimeException;
 
 /**
  * Class BadPostRequestException
  * @package Jarischaefer\HalApi\Exceptions
  */
-class BadPostRequestException extends Exception
+class BadPostRequestException extends RuntimeException
 {
 
 }

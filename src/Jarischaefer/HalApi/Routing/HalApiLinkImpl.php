@@ -39,7 +39,7 @@ class HalApiLinkImpl implements HalApiLink
 	public function __construct(HalApiUrlGenerator $urlGenerator, Route $route, $parameters = [], string $queryString = '')
 	{
 		$this->route = $route;
-		$this->parameters = is_array($parameters) ? $parameters : [$parameters];
+		$this->parameters = self::extractFillableParameters($urlGenerator, $parameters);
 		$this->queryString = self::createQueryString($queryString);
 		$this->templated = self::evaluateTemplated($route, $urlGenerator, $this->queryString);
 		$this->link = $urlGenerator->action($this->route->getActionName(), $this->templated ? $this->parameters : []);
@@ -47,6 +47,26 @@ class HalApiLinkImpl implements HalApiLink
 		if (!empty($this->queryString)) {
 			$this->link .= '?' . $this->queryString;
 		}
+	}
+
+	/**
+	 * @param HalApiUrlGenerator $urlGenerator
+	 * @param $parameters
+	 * @return array
+	 */
+	private function extractFillableParameters(HalApiUrlGenerator $urlGenerator, $parameters): array
+	{
+		$parameters = is_array($parameters) ? $parameters : [$parameters];
+		$urlWithoutParameters = rawurldecode($urlGenerator->action($this->route->getActionName(), [], false));
+		preg_match_all('/\{(\w+)\}/', $urlWithoutParameters, $allParams);
+
+		if (empty($allParams[1])) {
+			return $parameters;
+		}
+
+		return array_filter($parameters, function ($key) use ($allParams) {
+			return in_array($key, $allParams[1]);
+		}, ARRAY_FILTER_USE_KEY);
 	}
 
 	/**

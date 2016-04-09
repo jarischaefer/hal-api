@@ -13,7 +13,11 @@ class HalApiLinkImplTest extends TestCase
 	{
 		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
-			->atLeast($this->once())
+			->once()
+			->with('Foo\Bar\Controllers\TestController@doSomething', [], false)
+			->andReturn('/parameters/foo');
+		$urlGenerator->shouldReceive('action')
+			->once()
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['foo'])
 			->andReturn('/parameters/foo');
 
@@ -28,7 +32,11 @@ class HalApiLinkImplTest extends TestCase
 	{
 		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
-			->atLeast($this->once())
+			->once()
+			->with('Foo\Bar\Controllers\TestController@doSomething', [], false)
+			->andReturn('/parameters/foo');
+		$urlGenerator->shouldReceive('action')
+			->once()
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['foo'])
 			->andReturn('/parameters/foo');
 
@@ -43,7 +51,11 @@ class HalApiLinkImplTest extends TestCase
 	{
 		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
-			->atLeast($this->once())
+			->once()
+			->with('Foo\Bar\Controllers\TestController@doSomething', [], false)
+			->andReturn('/parameters/foo');
+		$urlGenerator->shouldReceive('action')
+			->once()
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['foo'])
 			->andReturn('/parameters/foo');
 
@@ -58,7 +70,11 @@ class HalApiLinkImplTest extends TestCase
 	{
 		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
-			->atLeast($this->once())
+			->twice()
+			->with('Foo\Bar\Controllers\TestController@doSomething', [], false)
+			->andReturn('/parameters/foo');
+		$urlGenerator->shouldReceive('action')
+			->twice()
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['foo'])
 			->andReturn('/parameters/foo');
 
@@ -76,7 +92,11 @@ class HalApiLinkImplTest extends TestCase
 	{
 		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
-			->atLeast($this->once())
+			->once()
+			->with('Foo\Bar\Controllers\TestController@doSomething', [], false)
+			->andReturn('/parameters/foo');
+		$urlGenerator->shouldReceive('action')
+			->once()
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['foo'])
 			->andReturn('/parameters/foo');
 
@@ -92,11 +112,14 @@ class HalApiLinkImplTest extends TestCase
 		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
 			->once()
+			->with('Foo\Bar\Controllers\TestController@doSomething', [], false)
+			->andReturn('/parameters');
+		$urlGenerator->shouldReceive('action')
+			->once()
 			->with('Foo\Bar\Controllers\TestController@doSomething')
 			->andReturn('/parameters');
-
 		$urlGenerator->shouldReceive('action')
-			->atLeast($this->once())
+			->once()
 			->with('Foo\Bar\Controllers\TestController@doSomething', [])
 			->andReturn('/parameters');
 
@@ -111,7 +134,11 @@ class HalApiLinkImplTest extends TestCase
 	{
 		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
-			->atLeast($this->once())
+			->once()
+			->with('Foo\Bar\Controllers\TestController@doSomething', [], false)
+			->andReturn('/parameters');
+		$urlGenerator->shouldReceive('action')
+			->once()
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['page' => 10])
 			->andReturn('/parameters');
 
@@ -126,7 +153,11 @@ class HalApiLinkImplTest extends TestCase
 	{
 		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
-			->atLeast($this->once())
+			->once()
+			->with('Foo\Bar\Controllers\TestController@doSomething', [], false)
+			->andReturn('/parameters');
+		$urlGenerator->shouldReceive('action')
+			->once()
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['foo'])
 			->andReturn('/parameters/foo');
 
@@ -144,7 +175,11 @@ class HalApiLinkImplTest extends TestCase
 	{
 		$urlGenerator = Mockery::mock(HalApiUrlGenerator::class);
 		$urlGenerator->shouldReceive('action')
-			->atLeast($this->once())
+			->once()
+			->with('Foo\Bar\Controllers\TestController@doSomething', [], false)
+			->andReturn('/parameters');
+		$urlGenerator->shouldReceive('action')
+			->once()
 			->with('Foo\Bar\Controllers\TestController@doSomething', ['foo'])
 			->andReturn('/parameters/foo');
 

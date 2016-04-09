@@ -14,14 +14,6 @@ class HalApiRequestParameters
 {
 
 	/**
-	 * Query parameter name used for pagination's current page.
-	 */
-	const PAGINATION_URI_PAGE = 'page';
-	/**
-	 * Query parameter name used for pagination's item count per page.
-	 */
-	const PAGINATION_URI_PER_PAGE = 'per_page';
-	/**
 	 * Default number of items per pagination page. Used as a fallback if the value
 	 * provided via configuration is invalid.
 	 */
@@ -62,7 +54,7 @@ class HalApiRequestParameters
 	 */
 	private static function getPageFromRequest(Request $request): int
 	{
-		$page = $request->get(self::PAGINATION_URI_PAGE, 1);
+		$page = $request->get(RouteHelper::PARAM_PAGE, 1);
 
 		if (!is_numeric($page) || $page <= 0) {
 			$page = 1;
@@ -77,7 +69,7 @@ class HalApiRequestParameters
 	 */
 	private static function getPerPageFromRequest(Request $request): int
 	{
-		$perPage = $request->get(self::PAGINATION_URI_PER_PAGE, self::PAGINATION_DEFAULT_ITEMS_PER_PAGE);
+		$perPage = $request->get(RouteHelper::PARAM_PER_PAGE, self::PAGINATION_DEFAULT_ITEMS_PER_PAGE);
 
 		if (!is_numeric($perPage) || $perPage < 1) {
 			$perPage = self::PAGINATION_DEFAULT_ITEMS_PER_PAGE;
@@ -95,7 +87,8 @@ class HalApiRequestParameters
 	{
 		$this->request = $request;
 		$route = $request->route();
-		$routeParameters = $route->parameters();
+		$routeParameters = array_merge($route->parameters(), $request->input());
+
 		$this->self = $linkFactory->create($route, $routeParameters);
 		$this->parent = $linkFactory->create($routeHelper->parent($route), $routeParameters);
 		$this->parameters = new SafeIndexArray($request->input());

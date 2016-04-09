@@ -5,6 +5,8 @@ use Jarischaefer\HalApi\Exceptions\BadPostRequestException;
 use Jarischaefer\HalApi\Exceptions\BadPutRequestException;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
 use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
+use Jarischaefer\HalApi\Exceptions\FieldNotSearchableException;
+use Jarischaefer\HalApi\Exceptions\NotImplementedException;
 use Jarischaefer\HalApi\Repositories\HalApiRepository;
 use Jarischaefer\HalApi\Transformers\HalApiTransformerContract;
 use Symfony\Component\HttpFoundation\Response;
@@ -82,5 +84,16 @@ interface HalApiResourceControllerContract extends HalApiControllerContract
 	 * @throws DatabaseConflictException
 	 */
 	public function destroy(HalApiRequestParameters $parameters, Model $model): Response;
+
+	/**
+	 * Handles GET requests for searches.
+	 * The controller's repository must implement {@see HalApiSearchRepository}.
+	 *
+	 * @param HalApiRequestParameters $parameters
+	 * @return Response
+	 * @throws NotImplementedException
+	 * @throws FieldNotSearchableException
+	 */
+	public function search(HalApiRequestParameters $parameters): Response;
 
 }

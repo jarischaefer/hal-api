@@ -28,27 +28,27 @@ class HalApiPaginatedRepresentationImpl extends HalApiRepresentationImpl impleme
 		parent::__construct($linkFactory, $routeHelper, $self, $parent);
 
 		$route = $self->getRoute();
-		$routeParameters = array_merge($self->getParameters(), ['per_page' => $paginator->perPage()]);
+		$routeParameters = array_merge($self->getParameters(), [RouteHelper::PARAM_PAGE => $paginator->perPage()]);
 
 		$this->embedFromArray([
 			$relation => $transformer->collection($paginator->items())
 		])->meta('pagination', self::createPaginationMeta($paginator))
-			->link('first', $linkFactory->create($route, array_merge($routeParameters, ['page' => 1])));
+			->link('first', $linkFactory->create($route, array_merge($routeParameters, [RouteHelper::PARAM_PAGE => 1])));
 
 		$currentPage = $paginator->currentPage();
 
 		if ($currentPage > 1) {
-			$prev = $linkFactory->create($route, array_merge($routeParameters, ['page' => $currentPage - 1]));
+			$prev = $linkFactory->create($route, array_merge($routeParameters, [RouteHelper::PARAM_PAGE => $currentPage - 1]));
 			$this->link('prev', $prev);
 		}
 
 		if ($paginator->hasMorePages()) {
-			$next = $linkFactory->create($route, array_merge($routeParameters, ['page' => $currentPage + 1]));
+			$next = $linkFactory->create($route, array_merge($routeParameters, [RouteHelper::PARAM_PAGE => $currentPage + 1]));
 			$this->link('next', $next);
 		}
 
 		if ($paginator instanceof LengthAwarePaginator) {
-			$this->link('last', $linkFactory->create($route, array_merge($routeParameters, ['page' => $paginator->lastPage() ?: 1])));
+			$this->link('last', $linkFactory->create($route, array_merge($routeParameters, [RouteHelper::PARAM_PAGE => $paginator->lastPage() ?: 1])));
 		}
 	}
 

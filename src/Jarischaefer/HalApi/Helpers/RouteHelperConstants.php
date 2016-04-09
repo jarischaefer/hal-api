@@ -29,9 +29,17 @@ interface RouteHelperConstants
 	 */
 	const DESTROY = 'destroy';
 	/**
+	 * Query parameter name used for pagination's current page.
+	 */
+	const PARAM_PAGE = 'page';
+	/**
+	 * Query parameter name used for pagination's item count per page.
+	 */
+	const PARAM_PER_PAGE = 'per_page';
+	/**
 	 * Query string for pagination purposes.
 	 */
-	const PAGINATION_URI = 'page={page}&per_page={per_page}';
+	const PAGINATION_QUERY_STRING = 'page={page}&per_page={per_page}';
 	/**
 	 * Delimiter for routes' action names.
 	 *

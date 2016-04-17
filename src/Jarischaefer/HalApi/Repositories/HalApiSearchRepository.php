@@ -23,13 +23,13 @@ interface HalApiSearchRepository extends HalApiRepository
 
 	/**
 	 * @param string $field
-	 * @param $value
+	 * @param string $term
 	 * @param int $page
 	 * @param int $perPage
 	 * @return LengthAwarePaginator
 	 * @throws FieldNotSearchableException
 	 */
-	public function search(string $field, $value, int $page, int $perPage): LengthAwarePaginator;
+	public function search(string $field, string $term, int $page, int $perPage): LengthAwarePaginator;
 
 	/**
 	 * @param array $searchAttributes

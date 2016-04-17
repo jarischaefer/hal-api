@@ -1,7 +1,7 @@
 <?php namespace Jarischaefer\HalApi\Repositories;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use InvalidArgumentException;
+use Illuminate\Database\Eloquent\Builder;
 use Jarischaefer\HalApi\Exceptions\FieldNotSearchableException;
 
 /**
@@ -24,15 +24,17 @@ abstract class HalApiEloquentSearchRepository extends HalApiEloquentRepository i
 	/**
 	 * @inheritdoc
 	 */
-	public function search(string $field, $value, int $page, int $perPage): LengthAwarePaginator
+	public function search(string $field, string $term, int $page, int $perPage): LengthAwarePaginator
 	{
 		if (!self::isFieldSearchable($field) || !$this->fieldExists($field)) {
 			throw new FieldNotSearchableException($field);
 		}
 
-		return $this->model->newQuery()
-			->where($field, 'LIKE', '%' . $value . '%')
-			->paginate($perPage, ['*'], 'page', $page);
+		$query = $this->model->newQuery();
+		
+		static::appendSearchTerm($query, $field, $term);
+
+		return $query->paginate($perPage, ['*'], 'page', $page);
 	}
 
 	/**
@@ -52,11 +54,25 @@ abstract class HalApiEloquentSearchRepository extends HalApiEloquentRepository i
 			}
 
 			if ($this->fieldExists($field)) {
-				$query->where($field, 'LIKE', '%' . $term . '%');
+				static::appendSearchTerm($query, $field, $term);
 			}
 		}
 
 		return $query->paginate($perPage, ['*'], 'page', $page);
+	}
+
+	/**
+	 * This method should be overridden if the default search term is undesirable.
+	 * Very large tables might require native queries (e.g. full-text using MATCH AGAINST)
+	 * or no leading wildcard (e.g. TERM% instead of %TERM%).
+	 *
+	 * @param Builder $builder
+	 * @param string $field
+	 * @param string $term
+	 */
+	protected static function appendSearchTerm(Builder $builder, string $field, string $term)
+	{
+		$builder->where($field, 'LIKE', '%' . $term . '%');
 	}
 
 	/**

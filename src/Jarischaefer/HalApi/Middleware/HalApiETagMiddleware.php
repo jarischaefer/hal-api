@@ -17,6 +17,27 @@ class HalApiETagMiddleware
 	const NAME = 'hal-api.etag';
 
 	/**
+	 * @var bool
+	 */
+	private static $weakETagsAllowed = true;
+
+	/**
+	 * @return bool
+	 */
+	public static function isWeakETagsAllowed(): bool
+	{
+		return self::$weakETagsAllowed;
+	}
+
+	/**
+	 * @param bool $weakETagsAllowed
+	 */
+	public static function setWeakETagsAllowed(bool $weakETagsAllowed)
+	{
+		self::$weakETagsAllowed = $weakETagsAllowed;
+	}
+
+	/**
 	 * @param $request
 	 * @param Closure $next
 	 * @return mixed
@@ -47,7 +68,17 @@ class HalApiETagMiddleware
 	{
 		$requestTags = str_replace('"', '', $request->getETags());
 
-		return is_array($requestTags) && in_array($responseTag, $requestTags);
+		if (in_array($responseTag, $requestTags)) {
+			return true;
+		}
+
+		if (!self::$weakETagsAllowed) {
+			return false;
+		}
+
+		$requestTags = str_replace('W/', '', $requestTags);
+
+		return in_array($responseTag, $requestTags);
 	}
 
 }

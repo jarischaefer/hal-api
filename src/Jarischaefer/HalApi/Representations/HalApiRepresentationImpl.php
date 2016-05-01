@@ -1,5 +1,7 @@
 <?php namespace Jarischaefer\HalApi\Representations;
 
+use Illuminate\Contracts\Auth\Access\Gate;
+use Illuminate\Contracts\Auth\Authenticatable;
 use InvalidArgumentException;
 use Jarischaefer\HalApi\Helpers\Checks;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
@@ -28,6 +30,10 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	 * @var RouteHelper
 	 */
 	private $routeHelper;
+	/**
+	 * @var Gate
+	 */
+	private $gate;
 	/**
 	 * @var array
 	 */
@@ -58,13 +64,15 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	/**
 	 * @param LinkFactory $linkFactory
 	 * @param RouteHelper $routeHelper
+	 * @param Gate $gate
 	 * @param HalApiLink $self
 	 * @param HalApiLink $parent
 	 */
-	public function __construct(LinkFactory $linkFactory, RouteHelper $routeHelper, HalApiLink $self, HalApiLink $parent)
+	public function __construct(LinkFactory $linkFactory, RouteHelper $routeHelper, Gate $gate, HalApiLink $self, HalApiLink $parent)
 	{
 		$this->linkFactory = $linkFactory;
 		$this->routeHelper = $routeHelper;
+		$this->gate = $gate;
 
 		$this->link(self::SELF, $self);
 		$this->link(self::PARENT, $parent);
@@ -199,15 +207,26 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	}
 
 	/**
-	 * @param HalApiLink $parent
+	 * @param Authenticatable $authenticatable
 	 */
-	private function addSubordinateRoutes(HalApiLink $parent)
+	private function addSubordinateRoutes(Authenticatable $authenticatable = null)
 	{
-		$subordinateRoutes = $this->routeHelper->subordinates($parent->getRoute());
+		$self = $this->links[self::SELF];
+		$parameters = $self->getParameters();
+		$subordinateRoutes = $this->routeHelper->subordinates($self->getRoute());
+		$gate = $authenticatable ? $this->gate->forUser($authenticatable) : null;
 
 		foreach ($subordinateRoutes as $subRoute) {
+			if ($gate) {
+				$actionName = $subRoute->getActionName();
+
+				if ($gate->has($actionName) && $gate->denies($actionName)) {
+					continue;
+				}
+			}
+
 			$relation = RouteHelper::relation($subRoute);
-			$link = $this->linkFactory->create($subRoute, $parent->getParameters());
+			$link = $this->linkFactory->create($subRoute, $parameters);
 			$this->link($relation, $link);
 		}
 	}
@@ -215,7 +234,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 	/**
 	 * @inheritdoc
 	 */
-	public function build(): array
+	public function build(Authenticatable $authenticatable = null): array
 	{
 		$build = $this->root;
 
@@ -224,9 +243,7 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 				throw new RuntimeException('relation for self is not defined, cannot add subordinate routes');
 			}
 
-			/** @var HalApiLink $self */
-			$self = $this->links[self::SELF];
-			$this->addSubordinateRoutes($self);
+			$this->addSubordinateRoutes($authenticatable);
 		}
 
 		if (!empty($this->meta)) {
@@ -246,11 +263,11 @@ class HalApiRepresentationImpl implements HalApiRepresentation
 			if (is_array($embedded)) {
 				/** @var HalApiRepresentation $item */
 				foreach ($embedded as $item) {
-					$build['_embedded'][$relation][] = $item->build();
+					$build['_embedded'][$relation][] = $item->build($authenticatable);
 				}
 			} else {
 				/** @var HalApiRepresentation $embedded */
-				$build['_embedded'][$relation] = $embedded->build();
+				$build['_embedded'][$relation] = $embedded->build($authenticatable);
 			}
 		}
 

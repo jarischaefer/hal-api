@@ -1,5 +1,6 @@
 <?php namespace Jarischaefer\HalApi\Representations;
 
+use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Contracts\Pagination\Paginator;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
 use Jarischaefer\HalApi\Routing\HalApiLink;
@@ -10,7 +11,7 @@ use Jarischaefer\HalApi\Transformers\HalApiTransformerContract;
  * Class RepresentationFactoryImpl
  * @package Jarischaefer\HalApi\Representations
  */
-class RepresentationFactoryImpl implements RepresentationFactory
+final class RepresentationFactoryImpl implements RepresentationFactory
 {
 
 	/**
@@ -21,15 +22,21 @@ class RepresentationFactoryImpl implements RepresentationFactory
 	 * @var RouteHelper
 	 */
 	private $routeHelper;
+	/**
+	 * @var Gate
+	 */
+	private $gate;
 
 	/**
 	 * @param LinkFactory $linkFactory
 	 * @param RouteHelper $routeHelper
+	 * @param Gate $gate
 	 */
-	public function __construct(LinkFactory $linkFactory, RouteHelper $routeHelper)
+	public function __construct(LinkFactory $linkFactory, RouteHelper $routeHelper, Gate $gate)
 	{
 		$this->linkFactory = $linkFactory;
 		$this->routeHelper = $routeHelper;
+		$this->gate = $gate;
 	}
 
 	/**
@@ -37,7 +44,7 @@ class RepresentationFactoryImpl implements RepresentationFactory
 	 */
 	public function create(HalApiLink $self, HalApiLink $parent): HalApiRepresentation
 	{
-		return new HalApiRepresentationImpl($this->linkFactory, $this->routeHelper, $self, $parent);
+		return new HalApiRepresentationImpl($this->linkFactory, $this->routeHelper, $this->gate, $self, $parent);
 	}
 
 	/**
@@ -45,7 +52,7 @@ class RepresentationFactoryImpl implements RepresentationFactory
 	 */
 	public function paginated(HalApiLink $self, HalApiLink $parent, Paginator $paginator, HalApiTransformerContract $transformer, string $relation): HalApiPaginatedRepresentation
 	{
-		return new HalApiPaginatedRepresentationImpl($this->linkFactory, $this->routeHelper, $self, $parent, $paginator, $transformer, $relation);
+		return new HalApiPaginatedRepresentationImpl($this->linkFactory, $this->routeHelper, $this->gate, $self, $parent, $paginator, $transformer, $relation);
 	}
 
 }

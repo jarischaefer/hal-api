@@ -1,5 +1,6 @@
 <?php namespace Jarischaefer\HalApi\Representations;
 
+use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\Pagination\Paginator;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
@@ -17,15 +18,16 @@ class HalApiPaginatedRepresentationImpl extends HalApiRepresentationImpl impleme
 	/**
 	 * @param LinkFactory $linkFactory
 	 * @param RouteHelper $routeHelper
+	 * @param Gate $gate
 	 * @param HalApiLink $self
 	 * @param HalApiLink $parent
 	 * @param Paginator $paginator
 	 * @param HalApiTransformerContract $transformer
 	 * @param string $relation
 	 */
-	public function __construct(LinkFactory $linkFactory, RouteHelper $routeHelper, HalApiLink $self, HalApiLink $parent, Paginator $paginator, HalApiTransformerContract $transformer, string $relation)
+	public function __construct(LinkFactory $linkFactory, RouteHelper $routeHelper, Gate $gate, HalApiLink $self, HalApiLink $parent, Paginator $paginator, HalApiTransformerContract $transformer, string $relation)
 	{
-		parent::__construct($linkFactory, $routeHelper, $self, $parent);
+		parent::__construct($linkFactory, $routeHelper, $gate, $self, $parent);
 
 		$route = $self->getRoute();
 		$routeParameters = array_merge($self->getParameters(), [RouteHelper::PARAM_PAGE => $paginator->perPage()]);

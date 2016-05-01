@@ -97,7 +97,7 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	{
 		$paginator = $this->repository->paginate($parameters->getPage(), $parameters->getPerPage());
 
-		return $this->responseFactory->json($this->paginate($parameters, $paginator)->build());
+		return $this->responseFactory->json($this->paginate($parameters, $paginator)->build($this->guard->user()));
 	}
 
 	/**
@@ -105,7 +105,7 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 	 */
 	public function show(HalApiRequestParameters $parameters, Model $model): Response
 	{
-		return $this->responseFactory->json($this->transformer->item($model)->build());
+		return $this->responseFactory->json($this->transformer->item($model)->build($this->guard->user()));
 	}
 
 	/**
@@ -188,7 +188,7 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 		}
 
 		$searchResult = $repository->searchMulti($searchAttributes, $parameters->getPage(), $parameters->getPerPage());
-		$response = $this->paginate($parameters, $searchResult)->build();
+		$response = $this->paginate($parameters, $searchResult)->build($this->guard->user());
 
 		return $this->responseFactory->json($response);
 	}

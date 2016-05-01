@@ -1,5 +1,6 @@
 <?php namespace Jarischaefer\HalApi\Representations;
 
+use Illuminate\Contracts\Auth\Authenticatable;
 use Jarischaefer\HalApi\Routing\HalApiLink;
 
 /**
@@ -120,9 +121,10 @@ interface HalApiRepresentation
 	/**
 	 * Returns the API as an array.
 	 *
+	 * @param Authenticatable $authenticatable
 	 * @return array
 	 */
-	public function build(): array;
+	public function build(Authenticatable $authenticatable = null): array;
 
 	/**
 	 * Returns the API as a JSON string.

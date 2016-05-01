@@ -1,5 +1,7 @@
 <?php namespace Jarischaefer\HalApi\Controllers;
 
+use Illuminate\Contracts\Auth\Access\Gate;
+use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
@@ -91,6 +93,14 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 	 * @var ResponseFactory
 	 */
 	protected $responseFactory;
+	/**
+	 * @var Gate
+	 */
+	protected $gate;
+	/**
+	 * @var Guard
+	 */
+	protected $guard;
 
 	/**
 	 * @param HalApiControllerParameters $parameters
@@ -101,6 +111,8 @@ abstract class HalApiController extends Controller implements HalApiControllerCo
 		$this->representationFactory = $parameters->getRepresentationFactory();
 		$this->routeHelper = $parameters->getRouteHelper();
 		$this->responseFactory = $parameters->getResponseFactory();
+		$this->gate = $parameters->getGate();
+		$this->guard = $parameters->getGuard();
 	}
 
 	/**

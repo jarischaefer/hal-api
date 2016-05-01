@@ -13,7 +13,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  * Class RouteHelper
  * @package Jarischaefer\HalApi\Helpers
  */
-class RouteHelper implements RouteHelperConstants
+final class RouteHelper implements RouteHelperConstants
 {
 
 	/**
@@ -116,7 +116,7 @@ class RouteHelper implements RouteHelperConstants
 	 *
 	 * @var Router
 	 */
-	protected $router;
+	private $router;
 
 	/**
 	 * @param Router $router

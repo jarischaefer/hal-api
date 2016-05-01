@@ -1,6 +1,6 @@
 <?php namespace Jarischaefer\HalApi\Repositories;
 
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Builder;
 use Jarischaefer\HalApi\Exceptions\FieldNotSearchableException;
 
@@ -24,7 +24,7 @@ abstract class HalApiEloquentSearchRepository extends HalApiEloquentRepository i
 	/**
 	 * @inheritdoc
 	 */
-	public function search(string $field, string $term, int $page, int $perPage): LengthAwarePaginator
+	public function search(string $field, string $term, int $page, int $perPage): Paginator
 	{
 		if (!self::isFieldSearchable($field) || !$this->fieldExists($field)) {
 			throw new FieldNotSearchableException($field);
@@ -34,13 +34,13 @@ abstract class HalApiEloquentSearchRepository extends HalApiEloquentRepository i
 		
 		static::appendSearchTerm($query, $field, $term);
 
-		return $query->paginate($perPage, ['*'], 'page', $page);
+		return static::execute($query, $page, $perPage);
 	}
 
 	/**
 	 * @inheritdoc
 	 */
-	public function searchMulti(array $searchAttributes, int $page, int $perPage): LengthAwarePaginator
+	public function searchMulti(array $searchAttributes, int $page, int $perPage): Paginator
 	{
 		$query = $this->model->newQuery();
 
@@ -58,7 +58,20 @@ abstract class HalApiEloquentSearchRepository extends HalApiEloquentRepository i
 			}
 		}
 
-		return $query->paginate($perPage, ['*'], 'page', $page);
+		return static::execute($query, $page, $perPage);
+	}
+
+	/**
+	 * @param Builder $builder
+	 * @param int $page
+	 * @param int $perPage
+	 * @return Paginator
+	 */
+	protected static function execute(Builder $builder, int $page, int $perPage): Paginator
+	{
+		return self::withCustomPageResolver($page, function () use ($builder, $perPage) {
+			return $builder->simplePaginate($perPage);
+		});
 	}
 
 	/**

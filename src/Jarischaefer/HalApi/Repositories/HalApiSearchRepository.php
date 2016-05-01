@@ -1,6 +1,6 @@
 <?php namespace Jarischaefer\HalApi\Repositories;
 
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Contracts\Pagination\Paginator;
 use Jarischaefer\HalApi\Exceptions\FieldNotSearchableException;
 
 /**
@@ -26,17 +26,17 @@ interface HalApiSearchRepository extends HalApiRepository
 	 * @param string $term
 	 * @param int $page
 	 * @param int $perPage
-	 * @return LengthAwarePaginator
+	 * @return Paginator
 	 * @throws FieldNotSearchableException
 	 */
-	public function search(string $field, string $term, int $page, int $perPage): LengthAwarePaginator;
+	public function search(string $field, string $term, int $page, int $perPage): Paginator;
 
 	/**
 	 * @param array $searchAttributes
 	 * @param int $page
 	 * @param int $perPage
-	 * @return LengthAwarePaginator
+	 * @return Paginator
 	 */
-	public function searchMulti(array $searchAttributes, int $page, int $perPage): LengthAwarePaginator;
+	public function searchMulti(array $searchAttributes, int $page, int $perPage): Paginator;
 
 }

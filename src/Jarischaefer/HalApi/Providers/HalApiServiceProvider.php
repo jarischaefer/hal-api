@@ -48,8 +48,6 @@ class HalApiServiceProvider extends ServiceProvider
 
 		self::BASE_PATH . 'Repositories' . DIRECTORY_SEPARATOR . 'HalApiEloquentRepository.php',
 		self::BASE_PATH . 'Repositories' . DIRECTORY_SEPARATOR . 'HalApiEloquentSearchRepository.php',
-		self::BASE_PATH . 'Repositories' . DIRECTORY_SEPARATOR . 'HalApiRepository.php',
-		self::BASE_PATH . 'Repositories' . DIRECTORY_SEPARATOR . 'HalApiSearchRepository.php',
 
 		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiRepresentation.php',
 		self::BASE_PATH . 'Representations' . DIRECTORY_SEPARATOR . 'HalApiRepresentationImpl.php',

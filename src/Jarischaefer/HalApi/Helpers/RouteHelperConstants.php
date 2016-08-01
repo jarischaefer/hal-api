@@ -8,6 +8,10 @@ interface RouteHelperConstants
 {
 
 	/**
+	 *
+	 */
+	const ALL = [self::INDEX, self::SHOW, self::STORE, self::UPDATE, self::DESTROY];
+	/**
 	 * Method name for GET requests that list all resources (possibly paginated).
 	 */
 	const INDEX = 'index';

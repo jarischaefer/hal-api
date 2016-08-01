@@ -152,7 +152,7 @@ final class RouteHelper implements RouteHelperConstants
 	 * @param bool $pagination
 	 * @return ResourceRoute
 	 */
-	public function resource(string $name, string $controller, array $methods = [self::INDEX, self::SHOW, self::STORE, self::UPDATE, self::DESTROY], bool $pagination = true): ResourceRoute
+	public function resource(string $name, string $controller, array $methods = self::ALL, bool $pagination = true): ResourceRoute
 	{
 		return new ResourceRoute($name, $controller, $this, $methods, $pagination);
 	}

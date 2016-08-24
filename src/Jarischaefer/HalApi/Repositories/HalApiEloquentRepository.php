@@ -72,16 +72,11 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 	public function save(Model $model): Model
 	{
 		try {
-			$saved = $model->save();
+			$model->save();
+			return $model;
 		} catch (Exception $e) {
 			throw new DatabaseSaveException('Model could not be saved.', 0, $e);
 		}
-
-		if (!$saved) {
-			throw new DatabaseSaveException('Model could not be saved.');
-		}
-
-		return $model;
 	}
 
 	/**

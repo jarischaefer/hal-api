@@ -6,7 +6,6 @@ use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Schema\Builder;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
 use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
 use ReflectionClass;
@@ -20,20 +19,20 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 {
 
 	/**
+	 * @var DatabaseManager
+	 */
+	protected $databaseManager;
+	/**
 	 * @var Model
 	 */
 	protected $model;
-	/**
-	 * @var Builder
-	 */
-	protected $schemaBuilder;
 
 	/**
 	 * @param DatabaseManager $databaseManager
 	 */
 	public function __construct(DatabaseManager $databaseManager)
 	{
-		$this->schemaBuilder = $databaseManager->connection()->getSchemaBuilder();
+		$this->databaseManager = $databaseManager;
 
 		$class = static::getModelClass();
 		$this->model = new $class;
@@ -161,7 +160,8 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 	 */
 	public function getMissingFillableAttributes(array $attributes): array
 	{
-		$columnNames = $this->schemaBuilder->getColumnListing($this->model->getTable());
+		$schemaBuilder = $this->databaseManager->connection()->getSchemaBuilder();
+		$columnNames = $schemaBuilder->getColumnListing($this->model->getTable());
 		$missing = [];
 
 		foreach ($columnNames as $column) {

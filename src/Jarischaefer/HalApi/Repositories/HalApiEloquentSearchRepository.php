@@ -90,7 +90,8 @@ abstract class HalApiEloquentSearchRepository extends HalApiEloquentRepository i
 	 */
 	private function fieldExists(string $field): bool
 	{
-		$columnNames = $this->schemaBuilder->getColumnListing($this->model->getTable());
+		$schemaBuilder = $this->databaseManager->connection()->getSchemaBuilder();
+		$columnNames = $schemaBuilder->getColumnListing($this->model->getTable());
 
 		return in_array($field, $columnNames);
 	}

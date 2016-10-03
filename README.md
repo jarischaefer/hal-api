@@ -4,7 +4,7 @@ Enhances your HATEOAS experience by automating common tasks.
 
 # About
 
-This package is based on Laravel 5.2.
+This package is based on Laravel 5.
 It is designed to automate common tasks in RESTful API programming.
 These docs might not always be in sync with all the changes.
 
@@ -12,7 +12,7 @@ These docs might not always be in sync with all the changes.
 
 ## Requirements
 
-Requires Laravel 5.2 and PHP 7.0.
+Requires Laravel 5.3 and PHP 7.0.
 
 ## Composer
 

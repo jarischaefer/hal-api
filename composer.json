@@ -15,7 +15,7 @@
 		"php": ">=7.0.0"
 	},
 	"require-dev": {
-		"laravel/framework": "5.2.*",
+		"laravel/framework": "5.3.*",
 		"fzaninotto/faker": "~1.4",
 		"mockery/mockery": "dev-master",
 		"phpunit/phpunit": "~5.0",
@@ -28,5 +28,10 @@
 		"psr-0": {
 			"Jarischaefer\\HalApi\\": "src/"
 		}
+	},
+	"autoload-dev": {
+		"classmap": [
+			"tests"
+		]
 	}
 }

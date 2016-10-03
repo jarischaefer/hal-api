@@ -1,9 +1,7 @@
 <?php namespace Jarischaefer\HalApi\Tests\Helpers;
 
-use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Routing\Route;
 use Illuminate\Routing\RouteCollection;
-use Illuminate\Routing\Router;
 use Jarischaefer\HalApi\Helpers\RouteHelper;
 use Jarischaefer\HalApi\Tests\TestCase;
 
@@ -24,10 +22,7 @@ class ResourceRouteTest extends TestCase
 
 	public function testResourceRoute()
 	{
-		/* @var Dispatcher $dispatcher */
-		$dispatcher = $this->getMock(Dispatcher::class);
-		$router = new Router($dispatcher, null);
-		$routeHelper = new RouteHelper($router);
+		$routeHelper = $this->createRouteHelper();
 
 		$routeHelper->resource('test', 'TestController')
 			->get('get_test', 'get_test')
@@ -42,7 +37,7 @@ class ResourceRouteTest extends TestCase
 			->rawDelete('rawdelete', 'rawdelete')
 			->done();
 
-		$routes = $router->getRoutes();
+		$routes = $routeHelper->getRouter()->getRoutes();
 
 		$this->assertRoute($routes, 'test', 'GET', 'TestController@index');
 		$this->assertRoute($routes, 'test?' . RouteHelper::PAGINATION_QUERY_STRING, 'GET', 'TestController@index');

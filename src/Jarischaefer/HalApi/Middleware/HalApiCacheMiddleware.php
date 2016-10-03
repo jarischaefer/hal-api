@@ -47,47 +47,37 @@ class HalApiCacheMiddleware
 	 * @param  \Closure $next
 	 * @return mixed
 	 */
-	public function handle($request, Closure $next)
+	public function handle(Request $request, Closure $next)
 	{
-		if ($this->config->get('app.debug', false)) {
+		if (!self::isCacheable($request)) {
 			return $next($request);
 		}
 
-		if (!($request instanceof Request)) {
-			return $next($request);
-		}
-
-		$route = $request->route();
-
-		if (!($route instanceof Route)) {
-			return $next($request);
-		}
-
-		$actionName = $route->getActionName();
-
-		if (!RouteHelper::isValidActionName($actionName)) {
-			return $next($request);
-		}
+		$actionName = $request->route()->getActionName();
 
 		$class = explode(RouteHelper::ACTION_NAME_DELIMITER, $actionName)[0];
 		/** @var HalApiControllerContract $class */
 		$cache = $class::getCache($this->cacheFactory);
+		$key = self::generateKey($cache, $request);
 
-		if ($request->isMethodSafe()) {
-			$key = $this->generateKey($cache, $request);
+		return $cache->persist($key, function () use ($next, $request) {
+			return $next($request);
+		});
+	}
 
-			return $cache->persist($key, function () use ($next, $request) {
-				return $next($request);
-			});
+	/**
+	 * @param Request $request
+	 * @return bool
+	 */
+	private function isCacheable(Request $request): bool
+	{
+		if ($this->config->get('app.debug', false)) {
+			return false;
 		}
 
-		$cache->purge();
+		$route = $request->route();
 
-		foreach ($class::getRelatedCaches($this->cacheFactory) as $relatedCache) {
-			$relatedCache->purge();
-		}
-
-		return $next($request);
+		return $route instanceof Route && RouteHelper::isValidActionName($route->getActionName());
 	}
 
 	/**
@@ -95,7 +85,7 @@ class HalApiCacheMiddleware
 	 * @param Request $request
 	 * @return string
 	 */
-	private function generateKey(HalApiCache $cache, Request $request): string
+	private static function generateKey(HalApiCache $cache, Request $request): string
 	{
 		$method = $request->getMethod();
 		$uri = $request->getUri();

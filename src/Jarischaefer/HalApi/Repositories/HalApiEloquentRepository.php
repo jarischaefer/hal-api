@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
 use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
-use ReflectionClass;
-use ReflectionException;
 
 /**
  * Class HalApiEloquentRepository
@@ -107,52 +105,7 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 	 */
 	public function simplePaginate(int $page, int $perPage): Paginator
 	{
-		return $this->withCustomPageResolver($page, function () use ($perPage) {
-			return $this->model->newQuery()->simplePaginate($perPage);
-		});
-	}
-
-	/**
-	 * @param int $page
-	 * @param callable $callback
-	 * @return Paginator
-	 * @throws ReflectionException
-	 */
-	protected static function withCustomPageResolver(int $page, callable $callback): Paginator
-	{
-		// TODO reflection hack
-
-		$originalResolver = self::getOriginalResolver();
-		\Illuminate\Pagination\Paginator::currentPageResolver(function () use ($page) {
-			return $page;
-		});
-
-		try {
-			return $callback();
-		} finally {
-			\Illuminate\Pagination\Paginator::currentPageResolver($originalResolver);
-		}
-	}
-
-	/**
-	 * @return mixed
-	 * @throws ReflectionException
-	 */
-	private static function getOriginalResolver()
-	{
-		$reflectionClass = new ReflectionClass(\Illuminate\Pagination\Paginator::class);
-
-		if (!$reflectionClass->hasProperty('currentPageResolver')) {
-			throw new ReflectionException('Could not find currentPageResolver');
-		}
-
-		$property = $reflectionClass->getProperty('currentPageResolver');
-
-		if (!$property->isPublic()) {
-			$property->setAccessible(true);
-		}
-
-		return $property->getValue();
+		return $this->model->newQuery()->simplePaginate($perPage, ['*'], 'page', $page);
 	}
 
 	/**

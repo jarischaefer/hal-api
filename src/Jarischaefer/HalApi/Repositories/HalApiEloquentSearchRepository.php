@@ -65,9 +65,7 @@ abstract class HalApiEloquentSearchRepository extends HalApiEloquentRepository i
 	 */
 	protected static function execute(Builder $builder, int $page, int $perPage): Paginator
 	{
-		return self::withCustomPageResolver($page, function () use ($builder, $perPage) {
-			return $builder->simplePaginate($perPage);
-		});
+		return $builder->simplePaginate($perPage, ['*'], 'page', $page);
 	}
 
 	/**

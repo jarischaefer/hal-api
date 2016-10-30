@@ -43,8 +43,8 @@ class HalApiCacheMiddleware
 	/**
 	 * Handle an incoming request.
 	 *
-	 * @param  \Illuminate\Http\Request $request
-	 * @param  \Closure $next
+	 * @param Request $request
+	 * @param Closure $next
 	 * @return mixed
 	 */
 	public function handle(Request $request, Closure $next)
@@ -71,7 +71,7 @@ class HalApiCacheMiddleware
 	 */
 	private function isCacheable(Request $request): bool
 	{
-		if ($this->config->get('app.debug', false)) {
+		if (!$request->isMethodSafe() || $this->config->get('app.debug', false)) {
 			return false;
 		}
 

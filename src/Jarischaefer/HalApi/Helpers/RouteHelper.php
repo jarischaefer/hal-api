@@ -280,20 +280,18 @@ final class RouteHelper implements RouteHelperConstants
 	 */
 	public function parent(Route $child): Route
 	{
-		$childUri = $child->getUri();
-
-		if (isset($this->parentRouteCache[$childUri])) {
-			return $this->parentRouteCache[$childUri];
+		if (isset($this->parentRouteCache[$child->uri])) {
+			return $this->parentRouteCache[$child->uri];
 		}
 
-		$lastSlash = strripos($childUri, '/');
-		$guessedParentUri = $lastSlash === FALSE ? '/' : substr($childUri, 0, $lastSlash);
+		$lastSlash = strripos($child->uri, '/');
+		$guessedParentUri = $lastSlash === FALSE ? '/' : substr($child->uri, 0, $lastSlash);
 
 		while (true) {
 			/** @var Route $route */
 			foreach ($this->router->getRoutes() as $route) {
-				if (strcmp($route->getUri(), $guessedParentUri) === 0) {
-					return $this->parentRouteCache[$childUri] = $route;
+				if (strcmp($route->uri, $guessedParentUri) === 0) {
+					return $this->parentRouteCache[$child->uri] = $route;
 				}
 			}
 
@@ -309,7 +307,7 @@ final class RouteHelper implements RouteHelperConstants
 			}
 		}
 
-		return $this->parentRouteCache[$childUri] = $child; // return the same route if no parent exists
+		return $this->parentRouteCache[$child->uri] = $child; // return the same route if no parent exists
 	}
 
 	/**
@@ -321,10 +319,8 @@ final class RouteHelper implements RouteHelperConstants
 	 */
 	public function subordinates(Route $parentRoute): array
 	{
-		$parentUri = $parentRoute->getUri();
-
-		if (isset($this->subordinateRouteCache[$parentUri])) {
-			return $this->subordinateRouteCache[$parentUri];
+		if (isset($this->subordinateRouteCache[$parentRoute->uri])) {
+			return $this->subordinateRouteCache[$parentRoute->uri];
 		}
 
 		$parentActionName = $parentRoute->getActionName();
@@ -333,7 +329,7 @@ final class RouteHelper implements RouteHelperConstants
 		/** @var Route $route */
 		foreach ($this->router->getRoutes() as $route) {
 			// if the route does not start with the same uri as the current route -> skip
-			if ($parentUri !== '/' && strpos($route->getUri(), $parentUri) !== 0) {
+			if ($parentRoute->uri !== '/' && strpos($route->uri, $parentRoute->uri) !== 0) {
 				continue;
 			}
 
@@ -348,7 +344,7 @@ final class RouteHelper implements RouteHelperConstants
 			}
 		}
 
-		return $this->subordinateRouteCache[$parentUri] = $children;
+		return $this->subordinateRouteCache[$parentRoute->uri] = $children;
 	}
 
 }

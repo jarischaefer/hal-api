@@ -85,8 +85,8 @@ class HalApiServiceProvider extends ServiceProvider
 	 */
 	public function boot(Router $router)
 	{
-		$router->middleware(HalApiETagMiddleware::NAME, HalApiETagMiddleware::class);
-		$router->middleware(HalApiCacheMiddleware::NAME, HalApiCacheMiddleware::class);
+		$router->aliasMiddleware(HalApiETagMiddleware::NAME, HalApiETagMiddleware::class);
+		$router->aliasMiddleware(HalApiCacheMiddleware::NAME, HalApiCacheMiddleware::class);
 
 		$this->app->singleton(RouteHelper::class);
 		$this->app->singleton(HalApiUrlGenerator::class);

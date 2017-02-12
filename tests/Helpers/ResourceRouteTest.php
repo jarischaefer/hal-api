@@ -12,7 +12,7 @@ class ResourceRouteTest extends TestCase
 	{
 		/** @var Route $route */
 		foreach ($routes as $route) {
-			if (strcmp($route->getUri(), $uri) === 0 && strcmp($route->getActionName(), $actionName) === 0 && in_array($httpMethod, $route->getMethods())) {
+			if (strcmp($route->uri, $uri) === 0 && strcmp($route->getActionName(), $actionName) === 0 && in_array($httpMethod, $route->methods)) {
 				return;
 			}
 		}

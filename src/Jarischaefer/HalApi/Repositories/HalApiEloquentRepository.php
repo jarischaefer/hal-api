@@ -84,7 +84,7 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 		try {
 			$deleted = $model->delete();
 		} catch (Exception $e) {
-			throw new DatabaseConflictException('Model could not be deleted: ' . $model->getKey());
+			throw new DatabaseConflictException('Model could not be deleted: ' . $model->getKey(), $e);
 		}
 
 		if (!$deleted) {

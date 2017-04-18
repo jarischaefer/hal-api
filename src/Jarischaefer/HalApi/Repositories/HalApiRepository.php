@@ -39,6 +39,11 @@ interface HalApiRepository
 	public function save(Model $model): Model;
 
 	/**
+	 * @param iterable|Model[] $models
+	 */
+	public function saveMany(iterable $models): void;
+
+	/**
 	 * @param Model $model
 	 * @return void
 	 * @throws DatabaseConflictException

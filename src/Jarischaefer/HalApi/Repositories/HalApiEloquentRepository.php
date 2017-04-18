@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Jarischaefer\HalApi\Exceptions\DatabaseConflictException;
 use Jarischaefer\HalApi\Exceptions\DatabaseSaveException;
+use RuntimeException;
 
 /**
  * Class HalApiEloquentRepository
@@ -21,9 +22,9 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 	 */
 	protected $databaseManager;
 	/**
-	 * @var Model
+	 * @var string
 	 */
-	protected $model;
+	protected $class;
 
 	/**
 	 * @param DatabaseManager $databaseManager
@@ -31,9 +32,11 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 	public function __construct(DatabaseManager $databaseManager)
 	{
 		$this->databaseManager = $databaseManager;
+		$this->class = static::getModelClass();
 
-		$class = static::getModelClass();
-		$this->model = new $class;
+		if (!is_subclass_of($this->class, Model::class)) {
+			throw new RuntimeException('Model class must be subclass of ' . Model::class . ', but was ' . $this->class);
+		}
 	}
 
 	/**
@@ -42,16 +45,7 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 	 */
 	public function create(array $attributes = []): Model
 	{
-		$class = $this->model;
-		/** @var Model $model */
-		$model = new $class;
-
-		if (empty($attributes)) {
-			return $model;
-		}
-
-		$model->fill($attributes);
-		return $this->save($model);
+		return $this->newInstance()->fill($attributes);
 	}
 
 	/**
@@ -59,8 +53,7 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 	 */
 	public function all(): Collection
 	{
-		$model = $this->model;
-		return $model::all();
+		return $this->newInstance()->newQuery()->get();
 	}
 
 	/**
@@ -71,6 +64,23 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 		try {
 			$model->save();
 			return $model;
+		} catch (Exception $e) {
+			throw new DatabaseSaveException('Model could not be saved.', 0, $e);
+		}
+	}
+
+	/**
+	 * @inheritdoc
+	 */
+	public function saveMany(iterable $models): void
+	{
+		try {
+			$this->databaseManager->connection()->transaction(function () use ($models) {
+				/** @var Model $model */
+				foreach ($models as $model) {
+					$model->save();
+				}
+			});
 		} catch (Exception $e) {
 			throw new DatabaseSaveException('Model could not be saved.', 0, $e);
 		}
@@ -97,7 +107,7 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 	 */
 	public function paginate(int $page, int $perPage): LengthAwarePaginator
 	{
-		return $this->model->newQuery()->paginate($perPage, ['*'], 'page', $page);
+		return $this->newInstance()->newQuery()->paginate($perPage, ['*'], 'page', $page);
 	}
 
 	/**
@@ -105,7 +115,7 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 	 */
 	public function simplePaginate(int $page, int $perPage): Paginator
 	{
-		return $this->model->newQuery()->simplePaginate($perPage, ['*'], 'page', $page);
+		return $this->newInstance()->newQuery()->simplePaginate($perPage, ['*'], 'page', $page);
 	}
 
 	/**
@@ -114,16 +124,25 @@ abstract class HalApiEloquentRepository implements HalApiRepository
 	public function getMissingFillableAttributes(array $attributes): array
 	{
 		$schemaBuilder = $this->databaseManager->connection()->getSchemaBuilder();
-		$columnNames = $schemaBuilder->getColumnListing($this->model->getTable());
+		$model = $this->newInstance();
+		$columnNames = $schemaBuilder->getColumnListing($model->getTable());
 		$missing = [];
 
 		foreach ($columnNames as $column) {
-			if ($this->model->isFillable($column) && !in_array($column, $attributes)) {
+			if ($model->isFillable($column) && !in_array($column, $attributes)) {
 				$missing[] = $column;
 			}
 		}
 
 		return $missing;
+	}
+
+	/**
+	 * @return Model
+	 */
+	protected function newInstance(): Model
+	{
+		return new $this->class;
 	}
 
 }

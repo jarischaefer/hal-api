@@ -120,6 +120,7 @@ abstract class HalApiResourceController extends HalApiController implements HalA
 		}
 
 		$model = $this->repository->create($parameters->getBody()->getArray());
+		$this->repository->save($model);
 
 		return $this->show($parameters, $model)->setStatusCode(Response::HTTP_CREATED);
 	}

@@ -30,7 +30,7 @@ abstract class HalApiEloquentSearchRepository extends HalApiEloquentRepository i
 			throw new FieldNotSearchableException($field);
 		}
 
-		$query = $this->model->newQuery();
+		$query = $this->newInstance()->newQuery();
 		
 		static::appendSearchTerm($query, $field, $term);
 
@@ -42,7 +42,7 @@ abstract class HalApiEloquentSearchRepository extends HalApiEloquentRepository i
 	 */
 	public function searchMulti(array $searchAttributes, int $page, int $perPage): Paginator
 	{
-		$query = $this->model->newQuery();
+		$query = $this->newInstance()->newQuery();
 
 		foreach ($searchAttributes as $field => $term) {
 			if (!self::isFieldSearchable($field)) {
@@ -89,7 +89,7 @@ abstract class HalApiEloquentSearchRepository extends HalApiEloquentRepository i
 	private function fieldExists(string $field): bool
 	{
 		$schemaBuilder = $this->databaseManager->connection()->getSchemaBuilder();
-		$columnNames = $schemaBuilder->getColumnListing($this->model->getTable());
+		$columnNames = $schemaBuilder->getColumnListing($this->newInstance()->getTable());
 
 		return in_array($field, $columnNames);
 	}

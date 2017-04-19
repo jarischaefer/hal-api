@@ -1,4 +1,6 @@
-<?php namespace Jarischaefer\HalApi\Helpers;
+<?php
+
+namespace Jarischaefer\HalApi\Helpers;
 
 /**
  * Class ResourceRoute
@@ -207,15 +209,44 @@ class ResourceRoute implements RouteHelperConstants
 	}
 
 	/**
+	 * @param iterable $searchableFields
 	 * @return ResourceRoute
 	 */
-	public function searchable(): ResourceRoute
+	public function searchable(iterable $searchableFields = null): ResourceRoute
 	{
 		$this->routeHelper
 			->get($this->name . '/search', $this->controller, 'search')
 			->get($this->name . '/search?' . self::PAGINATION_QUERY_STRING, $this->controller, 'search');
 
+		$searchableQueryString = $this->createSearchableQueryString($searchableFields);
+
+		if (!empty($searchableQueryString)) {
+			$uri = $this->name . '/search?' . self::PAGINATION_QUERY_STRING . '&' . $searchableQueryString;
+			$this->routeHelper->get($uri, $this->controller, 'search');
+		}
+
 		return $this;
+	}
+
+	/**
+	 * @param iterable $searchableFields
+	 * @return string
+	 */
+	private function createSearchableQueryString(iterable $searchableFields = null): string
+	{
+		if ($searchableFields === null) {
+			return '';
+		}
+
+		$string = '';
+		$delimiter = '';
+
+		foreach ($searchableFields as $field) {
+			$string .= $delimiter . $field . '={' . $field . '}';
+			$delimiter = '&';
+		}
+
+		return $string;
 	}
 
 	/**

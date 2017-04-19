@@ -45,6 +45,10 @@ abstract class HalApiEloquentSearchRepository extends HalApiEloquentRepository i
 		$query = $this->newInstance()->newQuery();
 
 		foreach ($searchAttributes as $field => $term) {
+			if ($term === null) {
+				continue;
+			}
+
 			if (!self::isFieldSearchable($field)) {
 				throw new FieldNotSearchableException($field);
 			}
